@@ -16,15 +16,7 @@ palins str = (normal_palins + rest)
         aright = (palins $ init str)
 
 
--- -- Memoization with Recursion https://wiki.haskell.org/Memoization
--- slow_fib :: Int -> Integer
--- slow_fib 0 = 0
--- slow_fib 1 = 1
--- slow_fib n = slow_fib (n-2) + slow_fib (n-1)
--- -- The memoized version is much faster. Try memoized_fib 10000.
---
--- memoized_fib :: Int -> Integer
--- memoized_fib = (map fib [0 ..] !!)
---    where fib 0 = 0
---          fib 1 = 1
---          fib n = memoized_fib (n-2) + memoized_fib (n-1)
+-- Sources:
+-- https://www.reddit.com/r/haskell/comments/8hapb2/dynamic_programming_in_haskell_is_just_recursion/
+-- http://travis.athougies.net/posts/2018-05-05-dynamic-programming-is-recursion.html
+-- Memoization with Recursion https://wiki.haskell.org/Memoization
