@@ -17,6 +17,8 @@ palins str = (normal_palins + rest)
         aright = (palins $ init str)
 
 
+
+
 -- start with ns = [1], ps = []
 
 
@@ -27,7 +29,7 @@ palins str = (normal_palins + rest)
 -- The first char each time. This we get by the head of tails of string.
 -- The previous line.
 
--- tls has all the tails of the string
+-- tls has all the tails of the string except empty
 
 tls = tail . reverse . tails
 adv_pals :: [[Char]] -> [Int] -> Int
@@ -50,15 +52,7 @@ calcline c str prv = calchelp c 0 0 str prv
             then 1
             else (-inprev)
 
--- -- Memoization with Recursion https://wiki.haskell.org/Memoization
--- slow_fib :: Int -> Integer
--- slow_fib 0 = 0
--- slow_fib 1 = 1
--- slow_fib n = slow_fib (n-2) + slow_fib (n-1)
--- -- The memoized version is much faster. Try memoized_fib 10000.
---
--- memoized_fib :: Int -> Integer
--- memoized_fib = (map fib [0 ..] !!)
---    where fib 0 = 0
---          fib 1 = 1
---          fib n = memoized_fib (n-2) + memoized_fib (n-1)
+-- Sources:
+-- https://www.reddit.com/r/haskell/comments/8hapb2/dynamic_programming_in_haskell_is_just_recursion/
+-- http://travis.athougies.net/posts/2018-05-05-dynamic-programming-is-recursion.html
+-- Memoization with Recursion https://wiki.haskell.org/Memoization
