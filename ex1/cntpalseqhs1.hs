@@ -36,7 +36,7 @@ adv_pals :: [[Char]] -> [Int] -> Int
 adv_pals [] lst = last lst
 adv_pals tlsdstrings@(newstring:later) prevline = adv_pals later newline
       where
-        newline = calcline (head newstring) newstring prevline
+        newline = 0:(calcline (head newstring) newstring prevline)
 
 -- calcline: Takes as arguments; a letter, a string, an int list and returns an
 -- int list base on this formula
