@@ -31,6 +31,12 @@ calcline c str prv = calchelp c 0 0 str prv
             then 1
             else (-inprev)
 
+solve :: [Char] -> Int
+solve cs = 1 + adv_pals (tls cs) [0]
+
+main :: IO ()
+main = interact $ show . solve . last . words
+
 -- Sources:
 -- https://www.reddit.com/r/haskell/comments/8hapb2/dynamic_programming_in_haskell_is_just_recursion/
 -- http://travis.athougies.net/posts/2018-05-05-dynamic-programming-is-recursion.html
