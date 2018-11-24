@@ -9,6 +9,7 @@
 *.o
 *.so
 *.out
+*.hi
 
 # Packages #
 ############
