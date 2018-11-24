@@ -32,7 +32,7 @@ calcline c str prv = calchelp c 0 0 str prv
             else (-inprev)
 
 solve :: [Char] -> Int
-solve cs = 1 + adv_pals (tls cs) [0]
+solve cs = adv_pals (tls cs) [0]
 
 main :: IO ()
 main = interact $ show . solve . last . words
