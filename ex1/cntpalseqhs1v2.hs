@@ -11,19 +11,19 @@ import Data.List
 -- tls has all the tails of the string except empty
 tls = tail . reverse . tails
 
-adv_pals :: [[Char]] -> [Int] -> Int
+adv_pals :: [[Char]] -> [Integer] -> Integer
 adv_pals [] lst = last lst
 adv_pals tlsdstrings@(newstring:later) prevline = adv_pals later newline
       where
         newline = 0:(calcline (head newstring) newstring prevline)
 
--- calcline: Takes as arguments; a letter, a string, an int list and returns an
--- int list base on this formula
+-- calcline: Takes as arguments; a letter, a string, an Integer list and returns an
+-- Integer list base on this formula
 -- out[i] = in[i] + out[i-1] + if (char==str[i]) then 1 else -in[i-1]
-calcline :: Char -> [Char] -> [Int] -> [Int]
+calcline :: Char -> [Char] -> [Integer] -> [Integer]
 calcline c str prv = calchelp c 0 0 str prv
     where
-      calchelp :: Char -> Int -> Int -> [Char] -> [Int] -> [Int]
+      calchelp :: Char -> Integer -> Integer -> [Char] -> [Integer] -> [Integer]
       calchelp _ mem inprev ""  [] = []
       calchelp c mem inprev str prv@(h:r) = x:(calchelp c x h (tail str) r)
         where
@@ -31,11 +31,14 @@ calcline c str prv = calchelp c 0 0 str prv
             then 1
             else (-inprev)
 
-solve :: [Char] -> Int
-solve cs = adv_pals (tls cs) [0]
+solve :: [Char] -> Integer
+solve cs = adv_pals (tls cs) [0] `rem` 20130401
+
+nl :: [Char] -> [Char]
+nl x = x ++ "\n"
 
 main :: IO ()
-main = interact $ show . solve . last . words
+main = interact $ nl . show . solve . last . words
 
 -- Sources:
 -- https://www.reddit.com/r/haskell/comments/8hapb2/dynamic_programming_in_haskell_is_just_recursion/
