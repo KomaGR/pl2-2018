@@ -17,7 +17,7 @@
 *.exe
 *.o
 *.so
-*.out
+#*.out
 *.hi
 
 # Packages #
