@@ -30,11 +30,11 @@ solve (x:str:[]) = epic_palins (tail str) str (replicate (xr+1) 0) (replicate xr
     where
       xr = read x
 
-νέαγραμμή :: [Char] -> [Char]
-νέαγραμμή x = x ++ "\n"
+nl :: [Char] -> [Char]
+nl x = x ++ "\n"
 
 main :: IO ()
-main = interact $  νέαγραμμή . show . solve . words
+main = interact $  nl . show . solve . words
 
 -- Sources:
 -- https://www.reddit.com/r/haskell/comments/8hapb2/dynamic_programming_in_haskell_is_just_recursion/
