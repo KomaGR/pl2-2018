@@ -7,7 +7,7 @@
 --       a v g t v a g
 
 epic_palins str1 str2 pprev [a] = a
-epic_palins str1 str2 pprev prev = epic_palins (tail str1) str2 (tail prev) next
+epic_palins str1 str2 pprev prev = seq next $ epic_palins (tail str1) str2 (tail prev) next
     where
         next = help_epic str1 str2 pprev prev []
 
@@ -17,9 +17,9 @@ epic_palins str1 str2 pprev prev = epic_palins (tail str1) str2 (tail prev) next
 -- Should only work with utmost 4n elements
 -- This (with reverse) actually performs better than not having Tail Recursion
 help_epic [] _ _ _ next = reverse next
-help_epic (a:sa) (b:sb) (hpp:rpp) (fp:sp:rest) now = help_epic sa sb rpp (sp:rest) next
+help_epic (a:sa) (b:sb) (hpp:rpp) (fp:sp:rest) now = seq next $ help_epic sa sb rpp (sp:rest) next
   where
-    next = seq front (front:now)
+    next = seq front $ front:now
     front = (fp+sp+r) `mod` 20130401
     r = if a==b
       then 1
