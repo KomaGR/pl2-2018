@@ -2,7 +2,7 @@
 -- Ορέστης Καπαρουνάκης 03114057
 -- Άσκηση 2 - Τα δέντρα, πώς να τα διπλώνετε και να τα κλαδεύετε
 module Pruning where
-  
+
 data Tree a = T a [Tree a]
     deriving (Show)
 
@@ -55,9 +55,10 @@ mapTree f = foldTree (\x y -> T (f x) y)
 
 -- 3.
 
-trimTree :: Int -> Tree a -> Tree a
-trimTree 1 (T a b) = T a []
-trimTree n (T a b) = T a $ map (trimTree (n-1)) b
+trimTree :: Int -> Tree a -> Tree a     -- I would rather return 'Maybe Tree a' than explode
+trimTree n (T a b)  | n == 1 = T a []
+                    | n > 1 = T a $ map (trimTree (n-1)) b
+                    | otherwise = error "Pruning.trimTree: nothing left"
 
 path :: [Int] -> Tree a -> a
 path [] (T a b) = a
