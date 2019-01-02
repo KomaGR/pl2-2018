@@ -1,9 +1,13 @@
-#include <stdio>
-#include <stdint>
+#include <cstdio>
+#include <iostream>
+#include <fstream>
+#include <cstdint>
 #include <algorithm>
+#include <vector>
 
+typedef unsigned char byte;
 // opcodes
-{
+
 #define HALT 0x00
 #define JUMP 0x01
 #define JNZ 0x02
@@ -30,19 +34,78 @@
 #define INPUT 0x17
 #define OUTPUT 0x18
 #define CLOCK 0x2A
-}
+
 // op args
-{
+
 #define JUMP_ARG1 1
 #define JUMP_SIZEOF 3
 #define JNZ_ARG1 1
 #define JNZ_SIZEOF 3
-}
-
+#define DUP_ARG1 1
+#define DUP_SIZEOF 2
+#define SWAP_ARG1 1
+#define SWAP_SIZEOF 2
+#define DROP_SIZEOF 1
+#define PUSH4_ARG1 1
+#define PUSH4_SIZEOF 5
+#define PUSH2_ARG1 1
+#define PUSH2_SIZEOF 3
+#define PUSH1_ARG1 1
+#define PUSH1_SIZEOF 2
+#define ADD_SIZEOF 1
+#define SUB_SIZEOF 1
+#define MUL_SIZEOF 1
+#define DIV_SIZEOF 1
+#define MOD_SIZEOF 1
+#define EQ_SIZEOF 1
+#define NE_SIZEOF 1
+#define LT_SIZEOF 1
+#define GT_SIZEOF 1
+#define LE_SIZEOF 1
+#define GE_SIZEOF 1
+#define NOT_SIZEOF 1
+#define AND_SIZEOF 1
+#define OR_SIZEOF 1
+#define INPUT_SIZEOF 1
+#define OUTPUT_SIZEOF 1
+#define CLOCK_SIZEOF 1
 
 #define NEXT_INSTRUCTION goto *(void *)(label_tab[*pc])
 
-static void *label_tab[] = {
+
+uint16_t get_2_bytes(byte *arg) {
+  return (arg[0] << 8) | arg[1];
+}
+
+uint32_t get_4_bytes(byte *arg) {
+  return (arg[0] << 24) | (arg[1] << 16) | (arg[2] << 8) | arg[3];
+}
+
+int main(int argc, char const *argv[]) {
+
+  if (argc < 2) {
+    std::cout << "Please provide input program as argument." << '\n';
+    return 0;
+  }
+
+  std::ifstream input (argv[1], std::ifstream::in | std::ifstream::binary | std::ifstream::ate);
+  // std::ifstream::pos_type pos =
+  int length = input.tellg();     // Max program is 2^16 -1 bytes
+
+  byte *byte_program = new byte[length];
+  input.seekg(0, std::ifstream::beg);
+  input.read(byte_program, length);
+  input.close();
+
+  // TODO: Load program into byte_program
+  // Possibly padding it
+
+  // Initialize vm stack
+  std::vector<int32_t> the_stack;
+  the_stack.reserve(100);
+
+
+  static void *label_tab[] = {
   &&halt_label,
   &&jump_label,
   &&jnz_label,
@@ -69,27 +132,14 @@ static void *label_tab[] = {
   &&input_label,
   &&output_label,
   &&clock_label
-}
+};
 
-uint16_t get_2_bytes(byte *arg) {
-  return (arg[0] << 8) | arg[1];
-}
-
-int int main(int argc, char const *argv[]) {
-
-  byte *byte_program;
-  // TODO: Load program into byte_program
-  // Possibly padding it
-
-  // Initialize vm stack
-  std::vector<int32_t> the_stack();
-  the_stack.reserve(100);
-
-
-  byte *pc = &byte_program[0]
+  byte *pc = &byte_program[0];
   byte opcode;
 
-  while (TRUE) {
+  int32_t a, b;
+
+  while (1) {
     next_instruction:
       opcode = pc[0];
       switch (opcode) {
@@ -98,17 +148,21 @@ int int main(int argc, char const *argv[]) {
           goto _end_label;
         case JUMP:
         jump_label:
-          pc = &byte_program[get_2_bytes(&pc[JUMP_ARG1])]
+
+          pc = &byte_program[get_2_bytes(&pc[JUMP_ARG1])];
           NEXT_INSTRUCTION;
+
         case JNZ:       // JUMP NOT ZERO
         jnz_label:
-          auto tp = the_stack.pop_back();
 
-          pc =  (tp != 0) ?
+          a = the_stack.back();
+          the_stack.pop_back();
+          pc =  (a != 0) ?
                 &byte_program[get_2_bytes(&pc[JNZ_ARG1])] :
                 pc + JNZ_SIZEOF
                 ;
           NEXT_INSTRUCTION;
+
         case DUP:
         dup_label:
 
@@ -134,16 +188,19 @@ int int main(int argc, char const *argv[]) {
         push4_label:
 
           // TODO
+          the_stack.push_back(get_4_bytes(&pc[PUSH4_ARG1]));
+          pc += PUSH4_SIZEOF;
+          NEXT_INSTRUCTION;
 
         case PUSH2:
-        push4_label:
+        push2_label:
 
           the_stack.push_back(get_2_bytes(&pc[PUSH2_ARG1]));
           pc += PUSH2_SIZEOF; //3
           NEXT_INSTRUCTION;
 
         case PUSH1:
-        push4_label:
+        push1_label:
 
           the_stack.push_back(pc[PUSH1_ARG1]);
           pc += PUSH1_SIZEOF; //2
@@ -152,8 +209,10 @@ int int main(int argc, char const *argv[]) {
         case ADD:
         add_label:
 
-          auto b = the_stack.pop_back();
-          auto a = the_stack.pop_back();
+          b = the_stack.back();
+          the_stack.pop_back();
+          a = the_stack.back();
+          the_stack.pop_back();
           the_stack.push_back(a+b);
           pc += ADD_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -161,8 +220,10 @@ int int main(int argc, char const *argv[]) {
         case SUB:
         sub_label:
 
-          auto b = the_stack.pop_back();
-          auto a = the_stack.pop_back();
+          b = the_stack.back();
+          the_stack.pop_back();
+          a = the_stack.back();
+          the_stack.pop_back();
           the_stack.push_back(a-b);
           pc += SUB_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -170,8 +231,10 @@ int int main(int argc, char const *argv[]) {
         case MUL:
         mul_label:
 
-          auto b = the_stack.pop_back();
-          auto a = the_stack.pop_back();
+          b = the_stack.back();
+          the_stack.pop_back();
+          a = the_stack.back();
+          the_stack.pop_back();
           the_stack.push_back(a*b);
           pc += MUL_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -179,8 +242,10 @@ int int main(int argc, char const *argv[]) {
         case DIV:
         div_label:
 
-          auto b = the_stack.pop_back();
-          auto a = the_stack.pop_back();
+          b = the_stack.back();
+          the_stack.pop_back();
+          a = the_stack.back();
+          the_stack.pop_back();
           the_stack.push_back(a/b);
           pc += DIV_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -188,8 +253,10 @@ int int main(int argc, char const *argv[]) {
         case MOD:
         mod_label:
 
-          auto b = the_stack.pop_back();
-          auto a = the_stack.pop_back();
+          b = the_stack.back();
+          the_stack.pop_back();
+          a = the_stack.back();
+          the_stack.pop_back();
           the_stack.push_back(a%b);
           pc += MOD_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -197,8 +264,10 @@ int int main(int argc, char const *argv[]) {
         case EQ:
         eq_label:
 
-          auto b = the_stack.pop_back();
-          auto a = the_stack.pop_back();
+          b = the_stack.back();
+          the_stack.pop_back();
+          a = the_stack.back();
+          the_stack.pop_back();
           the_stack.push_back((a==b)?1:0);
           pc += EQ_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -206,8 +275,10 @@ int int main(int argc, char const *argv[]) {
         case NE:
         ne_label:
 
-          auto b = the_stack.pop_back();
-          auto a = the_stack.pop_back();
+          b = the_stack.back();
+          the_stack.pop_back();
+          a = the_stack.back();
+          the_stack.pop_back();
           the_stack.push_back((a!=b)?1:0);
           pc += NE_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -215,8 +286,10 @@ int int main(int argc, char const *argv[]) {
         case LT:
         lt_label:
 
-          auto b = the_stack.pop_back();
-          auto a = the_stack.pop_back();
+          b = the_stack.back();
+          the_stack.pop_back();
+          a = the_stack.back();
+          the_stack.pop_back();
           the_stack.push_back((a<b)?1:0);
           pc += LT_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -224,8 +297,10 @@ int int main(int argc, char const *argv[]) {
         case GT:
         gt_label:
 
-          auto b = the_stack.pop_back();
-          auto a = the_stack.pop_back();
+          b = the_stack.back();
+          the_stack.pop_back();
+          a = the_stack.back();
+          the_stack.pop_back();
           the_stack.push_back((a>b)?1:0);
           pc += GT_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -233,8 +308,10 @@ int int main(int argc, char const *argv[]) {
         case LE:
         le_label:
 
-          auto b = the_stack.pop_back();
-          auto a = the_stack.pop_back();
+          b = the_stack.back();
+          the_stack.pop_back();
+          a = the_stack.back();
+          the_stack.pop_back();
           the_stack.push_back((a<=b)?1:0);
           pc += LE_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -242,8 +319,10 @@ int int main(int argc, char const *argv[]) {
         case GE:
         ge_label:
 
-          auto b = the_stack.pop_back();
-          auto a = the_stack.pop_back();
+          b = the_stack.back();
+          the_stack.pop_back();
+          a = the_stack.back();
+          the_stack.pop_back();
           the_stack.push_back((a>=b)?1:0);
           pc += GE_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -251,7 +330,8 @@ int int main(int argc, char const *argv[]) {
         case NOT:
         not_label:
 
-          auto a = the_stack.pop_back();
+          a = the_stack.back();
+          the_stack.pop_back();
           the_stack.push_back((a==0)?1:0);
           pc += NOT_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -259,8 +339,10 @@ int int main(int argc, char const *argv[]) {
         case AND:
         and_label:
 
-          auto b = the_stack.pop_back();
-          auto a = the_stack.pop_back();
+          b = the_stack.back();
+          the_stack.pop_back();
+          a = the_stack.back();
+          the_stack.pop_back();
           the_stack.push_back((a!=0 && b!=0)?1:0);
           pc += AND_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -268,8 +350,10 @@ int int main(int argc, char const *argv[]) {
         case OR:
         or_label:
 
-          auto b = the_stack.pop_back();
-          auto a = the_stack.pop_back();
+          b = the_stack.back();
+          the_stack.pop_back();
+          a = the_stack.back();
+          the_stack.pop_back();
           the_stack.push_back((a==0 && b==0)?0:1);
           pc += OR_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -285,13 +369,15 @@ int int main(int argc, char const *argv[]) {
         case OUTPUT:
         output_label:
 
-          auto c = the_stack.pop_back();
-          putchar(c);
+          b = the_stack.back();
+          the_stack.pop_back();
+          putchar(b);
           pc += OUTPUT_SIZEOF;   //1
           NEXT_INSTRUCTION;
 
         case CLOCK:
         clock_label:
+          goto _end_label;
 
       }
 
