@@ -74,11 +74,11 @@ typedef unsigned char byte;
 
 
 uint16_t get_2_bytes(byte *arg) {
-  return (arg[0] << 8) | arg[1];
+  return (arg[1] << 8) | arg[0];
 }
 
 uint32_t get_4_bytes(byte *arg) {
-  return (arg[0] << 24) | (arg[1] << 16) | (arg[2] << 8) | arg[3];
+  return (arg[3] << 24) | (arg[2] << 16) | (arg[1] << 8) | arg[0];
 }
 
 int main(int argc, char const *argv[]) {
@@ -92,17 +92,25 @@ int main(int argc, char const *argv[]) {
   // std::ifstream::pos_type pos =
   int length = input.tellg();     // Max program is 2^16 -1 bytes
 
+  std::cout << "I managed." << '\n';
   byte *byte_program = new byte[length];
   input.seekg(0, std::ifstream::beg);
-  input.read(byte_program, length);
+  input.read((char*)byte_program, length);
   input.close();
 
+  std::cout << "I managed to read the file." << '\n';
+  for (size_t i = 0; i < length; i++) {
+    std::cout << std::hex << byte_program[i];
+  }
+  std::cout << '\n';
   // TODO: Load program into byte_program
   // Possibly padding it
 
   // Initialize vm stack
+  std::cout << "Initializing stack...";
   std::vector<int32_t> the_stack;
   the_stack.reserve(100);
+  std::cout << " done!" << '\n';
 
 
   static void *label_tab[] = {
@@ -137,24 +145,32 @@ int main(int argc, char const *argv[]) {
   byte *pc = &byte_program[0];
   byte opcode;
 
-  int32_t a, b;
+  int32_t a, b, c;
 
+  std::cout << "Starting vm loop." << '\n';
   while (1) {
     next_instruction:
-      opcode = pc[0];
+      opcode = (int) pc[0];
+      std::cout << "opcode seems to be 0x" <<  std::hex << (int)opcode << '\n';
       switch (opcode) {
         case HALT:
         halt_label:
+          // std::cout << "Halt op" << '\n';
           goto _end_label;
         case JUMP:
         jump_label:
 
+          // std::cout << "Jump op" << '\n';
+          // std::cout << "pc is 0x" << std::hex << pc << '\n';
           pc = &byte_program[get_2_bytes(&pc[JUMP_ARG1])];
+          std::cout << std::hex << (int) pc[1] << (int) pc[2] << '\n';
+          // std::cout << "Jumping to 0x" << std::hex << pc << '\n';
           NEXT_INSTRUCTION;
 
         case JNZ:       // JUMP NOT ZERO
         jnz_label:
 
+          std::cout << "JNZ op" << '\n';
           a = the_stack.back();
           the_stack.pop_back();
           pc =  (a != 0) ?
@@ -166,13 +182,15 @@ int main(int argc, char const *argv[]) {
         case DUP:
         dup_label:
 
-          the_stack.push_back(the_stack.at(the_stack.rbegin() + (int) pc[DUP_ARG1]));
+          std::cout << "DUP op" << '\n';
+          the_stack.push_back(*(the_stack.rbegin() + (int) pc[DUP_ARG1]));
           pc += DUP_SIZEOF;   //2
           NEXT_INSTRUCTION;
 
         case SWAP:
         swap_label:
 
+          std::cout << "SWAP op" << '\n';
           std::iter_swap(the_stack.rbegin(), the_stack.rbegin() +  (int) pc[SWAP_ARG1]);
           pc += SWAP_SIZEOF;  //2
           NEXT_INSTRUCTION;
@@ -180,6 +198,7 @@ int main(int argc, char const *argv[]) {
         case DROP:
         drop_label:
 
+          std::cout << "DROP op" << '\n';
           the_stack.pop_back();
           pc += DROP_SIZEOF;  //1
           NEXT_INSTRUCTION;
@@ -188,6 +207,7 @@ int main(int argc, char const *argv[]) {
         push4_label:
 
           // TODO
+          std::cout << "PUSH4 op" << '\n';
           the_stack.push_back(get_4_bytes(&pc[PUSH4_ARG1]));
           pc += PUSH4_SIZEOF;
           NEXT_INSTRUCTION;
@@ -195,6 +215,7 @@ int main(int argc, char const *argv[]) {
         case PUSH2:
         push2_label:
 
+          std::cout << "PUSH2 op" << '\n';
           the_stack.push_back(get_2_bytes(&pc[PUSH2_ARG1]));
           pc += PUSH2_SIZEOF; //3
           NEXT_INSTRUCTION;
@@ -202,6 +223,7 @@ int main(int argc, char const *argv[]) {
         case PUSH1:
         push1_label:
 
+          std::cout << "PUSH1 op" << '\n';
           the_stack.push_back(pc[PUSH1_ARG1]);
           pc += PUSH1_SIZEOF; //2
           NEXT_INSTRUCTION;
@@ -209,6 +231,7 @@ int main(int argc, char const *argv[]) {
         case ADD:
         add_label:
 
+          std::cout << "ADD op" << '\n';
           b = the_stack.back();
           the_stack.pop_back();
           a = the_stack.back();
@@ -220,6 +243,7 @@ int main(int argc, char const *argv[]) {
         case SUB:
         sub_label:
 
+          std::cout << "SUB op" << '\n';
           b = the_stack.back();
           the_stack.pop_back();
           a = the_stack.back();
@@ -231,6 +255,7 @@ int main(int argc, char const *argv[]) {
         case MUL:
         mul_label:
 
+          std::cout << "MUL op" << '\n';
           b = the_stack.back();
           the_stack.pop_back();
           a = the_stack.back();
@@ -242,6 +267,7 @@ int main(int argc, char const *argv[]) {
         case DIV:
         div_label:
 
+          std::cout << "DIV op" << '\n';
           b = the_stack.back();
           the_stack.pop_back();
           a = the_stack.back();
@@ -253,6 +279,7 @@ int main(int argc, char const *argv[]) {
         case MOD:
         mod_label:
 
+          std::cout << "MOD op" << '\n';
           b = the_stack.back();
           the_stack.pop_back();
           a = the_stack.back();
@@ -264,6 +291,7 @@ int main(int argc, char const *argv[]) {
         case EQ:
         eq_label:
 
+          std::cout << "EQ op" << '\n';
           b = the_stack.back();
           the_stack.pop_back();
           a = the_stack.back();
@@ -275,6 +303,7 @@ int main(int argc, char const *argv[]) {
         case NE:
         ne_label:
 
+          std::cout << "NE op" << '\n';
           b = the_stack.back();
           the_stack.pop_back();
           a = the_stack.back();
@@ -286,6 +315,7 @@ int main(int argc, char const *argv[]) {
         case LT:
         lt_label:
 
+          std::cout << "LT op" << '\n';
           b = the_stack.back();
           the_stack.pop_back();
           a = the_stack.back();
@@ -297,6 +327,7 @@ int main(int argc, char const *argv[]) {
         case GT:
         gt_label:
 
+          std::cout << "GT op" << '\n';
           b = the_stack.back();
           the_stack.pop_back();
           a = the_stack.back();
@@ -308,6 +339,7 @@ int main(int argc, char const *argv[]) {
         case LE:
         le_label:
 
+          std::cout << "LE op" << '\n';
           b = the_stack.back();
           the_stack.pop_back();
           a = the_stack.back();
@@ -319,6 +351,7 @@ int main(int argc, char const *argv[]) {
         case GE:
         ge_label:
 
+          std::cout << "GE op" << '\n';
           b = the_stack.back();
           the_stack.pop_back();
           a = the_stack.back();
@@ -330,6 +363,7 @@ int main(int argc, char const *argv[]) {
         case NOT:
         not_label:
 
+          std::cout << "NOT op" << '\n';
           a = the_stack.back();
           the_stack.pop_back();
           the_stack.push_back((a==0)?1:0);
@@ -339,6 +373,7 @@ int main(int argc, char const *argv[]) {
         case AND:
         and_label:
 
+          std::cout << "AND op" << '\n';
           b = the_stack.back();
           the_stack.pop_back();
           a = the_stack.back();
@@ -350,6 +385,7 @@ int main(int argc, char const *argv[]) {
         case OR:
         or_label:
 
+          std::cout << "OR op" << '\n';
           b = the_stack.back();
           the_stack.pop_back();
           a = the_stack.back();
@@ -361,7 +397,8 @@ int main(int argc, char const *argv[]) {
         case INPUT:
         input_label:
 
-          auto c = getchar();
+          std::cout << "INPUT op" << '\n';
+          c = (int32_t) getchar();
           the_stack.push_back(c);
           pc += INPUT_SIZEOF;   //1
           NEXT_INSTRUCTION;
@@ -369,14 +406,17 @@ int main(int argc, char const *argv[]) {
         case OUTPUT:
         output_label:
 
+          std::cout << "OUTPUT op" << '\n';
           b = the_stack.back();
           the_stack.pop_back();
-          putchar(b);
+          putchar((char) b);
           pc += OUTPUT_SIZEOF;   //1
           NEXT_INSTRUCTION;
 
         case CLOCK:
         clock_label:
+
+          std::cout << "CLOCK op - HALTING" << '\n';
           goto _end_label;
 
       }
