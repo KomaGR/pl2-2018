@@ -153,7 +153,7 @@ int main(int argc, char const *argv[]) {
   0,                // 25 /* vulnerabilities: 0 */
   0, 0, 0, 0, 0,    // 30
   0, 0, 0, 0, 0,    // 35
-  0, 0, 0, 0, 0     // 40
+  0, 0, 0, 0, 0,    // 40
   0,                //
   &&clock_label     // 42 (0x2a) aka "Thanks, I hate it"
 };
