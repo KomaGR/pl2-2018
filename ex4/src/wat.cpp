@@ -150,22 +150,10 @@ int main(int argc, char const *argv[]) {
   &&or_label,
   &&input_label,    // 23
   &&output_label,   // 24
-  0,                // 25
-  0,
-  0,                /* vulnerabilities: 0 */
-  0,
-  0,
-  0,                // 30
-  0,
-  0,
-  0,
-  0,
-  0,                // 35
-  0,
-  0,
-  0,
-  0,
-  0,                // 40
+  0,                // 25 /* vulnerabilities: 0 */
+  0, 0, 0, 0, 0,    // 30
+  0, 0, 0, 0, 0,    // 35
+  0, 0, 0, 0, 0     // 40
   0,                //
   &&clock_label     // 42 (0x2a) aka "Thanks, I hate it"
 };
