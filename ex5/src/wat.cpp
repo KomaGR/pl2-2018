@@ -431,7 +431,8 @@ int main(int argc, char const *argv[]) {
             the_stack.pop_back();
             a = the_stack.back();
             the_stack.pop_back();
-            the_stack.push_back(hp.add(a, b));  //TODO: Somehow note that this is a pointer to the heap.
+            c = hp.add(a, b);
+            the_stack.push_back(c);
             pc += CONS_SIZEOF;
             NEXT_INSTRUCTION;
 
@@ -440,7 +441,7 @@ int main(int argc, char const *argv[]) {
 
             a = the_stack.back();
             the_stack.pop_back();
-            b = (hp.get(a) >> 32);
+            b = hp.get(a, 0);
             the_stack.push_back(b);
             pc += HD_SIZEOF;
             NEXT_INSTRUCTION;
@@ -450,7 +451,7 @@ int main(int argc, char const *argv[]) {
 
             a = the_stack.back();
             the_stack.pop_back();
-            b = hp.get(a);
+            b = hp.get(a, 1);      // Auto truncates to int32_t (fingers crossed)
             the_stack.push_back(b);
             pc += TL_SIZEOF;
             NEXT_INSTRUCTION;
@@ -459,7 +460,7 @@ int main(int argc, char const *argv[]) {
         clock_label:
 
             #ifdef PRINTDEBUG
-            std::cout << "CLOCK op - HALTING" << '\n';
+            std::cout << "CLOCK op" << '\n';
             #endif
             end = clock();
             cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
