@@ -419,7 +419,8 @@ int main(int argc, char const *argv[]) {
             b = the_stack.back();
             the_stack.pop_back();
             putchar((char) b);
-            putchar('\n');
+            // putchar('\n');
+            fflush(stdout);
             pc += OUTPUT_SIZEOF;   //1
             NEXT_INSTRUCTION;
 
@@ -430,7 +431,7 @@ int main(int argc, char const *argv[]) {
             the_stack.pop_back();
             a = the_stack.back();
             the_stack.pop_back();
-            the_stack.push_back(hp.add(a, b));
+            the_stack.push_back(hp.add(a, b));  //TODO: Somehow note that this is a pointer to the heap.
             pc += CONS_SIZEOF;
             NEXT_INSTRUCTION;
 
