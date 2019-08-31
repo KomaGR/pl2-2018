@@ -1,6 +1,6 @@
 ### Programming Languages 2 - 2018+
 
-1. [ ] Μετρήστε τα παλίνδρομα σε Haskell
+1. [x] Μετρήστε τα παλίνδρομα σε Haskell
 2. [x] Haskell, δέντρα
 3. [ ] QuickCheck
 4. [x] Εικονικές μηχανές
