@@ -47,8 +47,10 @@ instance Show Type where
 readExpr :: String -> Expr
 readExpr s = read s :: Expr
 
-typist :: Expr -> Maybe Type
-typist x = x
+-- typist :: Expr -> Maybe Type
+typist Evar a = x
+typist Eabs a e = x
+typist Eapp e1 e2 = x
 
 -- Solve for each
 solve :: String -> String
