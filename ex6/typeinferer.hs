@@ -49,28 +49,32 @@ instance Show Type where
 readExpr :: String -> Expr
 readExpr s = read s :: Expr
 
-aux_lookup m a = case (Map.lookup a m) of 
-                  Just number -> (m, number)
-                  Nothing -> (Map.insert a number m, number)
-                                    where number = Map.size m
-
-typist :: Map.Map String Int -> Expr -> (Map.Map String Int, Type)
+aux_lookup m k n = case (Map.lookup k m) of
+                      Just v -> (m, v, n)
+                      Nothing -> (Map.insert k n m, n, n+1)
+ 
+-- s@(m,n,c) == state@(var_map, next_number, constraint_set)
+typist :: (Map.Map String Int, Int, [(Type, Type)]) 
+          -> Expr 
+          -> ((Map.Map String Int, Int, [(Type, Type)]), Type)
 -- = "(Evar " ++ a ++ ")"
-typist m x@(Evar a) = Tvar number
-                      where (_, number) = aux_lookup m a            
+typist s@(m,n,c) x@(Evar a) = ((m1,new_n,c), Tvar n)
+                      where (m1, n, new_n) = aux_lookup m a n
 
--- = "(Eabs " ++ a ++ " " ++ typist e ++ ")" 
-typist m x@(Eabs a e) = Tfun (Tvar number) (typist m1 e)
-                      where (m1, number) = aux_lookup m a
+-- = "(Eabs " ++ a ++ " " ++ typist e ++ ")"
+typist s@(m,n,c) x@(Eabs a e) = ((m2,n2,c2), Tfun (Tvar n) (t2))
+                      where (m1, n, new_n) = aux_lookup m a n
+                            ((m2,n2,c2), t2) = typist (m1,new_n,c) e
 
 -- = "(Eapp " ++ typist e1 ++ " & " ++ typist e2 ++ ")"
-typist m x@(Eapp e1 e2) = Tvar t1
-                          where (m1, t1) = typist m e1
-                                (m2, t2) = typist m1 e1
+typist s@(m,n,c) x@(Eapp e1 e2) = ((m2,n2,c2), t1)
+                          where ((m1,n1,c1), t1) = typist (m,n,c) e1
+                                ((m2,n2,c2), t2) = typist (m1,n1,c1) e2
+                                
 
 -- Solve for each
 solve :: String -> String
-solve = show . typist Map.empty . readExpr
+solve = show . typist (Map.empty, 0, []) . readExpr
 
 main = interact $ unlines . map solve . tail . lines
 
