@@ -1,8 +1,8 @@
 import Data.Char
 import System.IO
 import Text.Read
-import qualified Data.Map.Lazy as Map
-import qualified Control.Monad.State.Lazy as State
+import qualified Data.Map.Strict as Map
+import qualified Control.Monad.State.Strict as State
 
 data Type  =  Tvar Int | Tfun Type Type                        deriving Eq
 data Expr  =  Evar String | Eabs String Expr | Eapp Expr Expr  deriving Eq
@@ -49,32 +49,47 @@ instance Show Type where
 readExpr :: String -> Expr
 readExpr s = read s :: Expr
 
+aux_lookup :: Map.Map String Int -> String -> Int 
+              -> (Map.Map String Int, Int, Int) 
 aux_lookup m k n = case (Map.lookup k m) of
                       Just v -> (m, v, n)
                       Nothing -> (Map.insert k n m, n, n+1)
  
 -- s@(m,n,c) == state@(var_map, next_number, constraint_set)
-typist :: (Map.Map String Int, Int, [(Type, Type)]) 
-          -> Expr 
-          -> ((Map.Map String Int, Int, [(Type, Type)]), Type)
+typist :: Expr -> State.State (Map.Map String Int, Int, [(Type, Type)]) Type
 -- = "(Evar " ++ a ++ ")"
-typist s@(m,n,c) x@(Evar a) = ((m1,new_n,c), Tvar n)
-                      where (m1, n, new_n) = aux_lookup m a n
+typist x@(Evar a) = do
+                      (m,n,c) <- State.get
+                      let (m1, n_prime, new_n) = aux_lookup m a n
+                      State.put (m1, new_n, c)
+                      State.return $ Tvar n_prime
 
 -- = "(Eabs " ++ a ++ " " ++ typist e ++ ")"
-typist s@(m,n,c) x@(Eabs a e) = ((m2,n2,c2), Tfun (Tvar n) (t2))
-                      where (m1, n, new_n) = aux_lookup m a n
-                            ((m2,n2,c2), t2) = typist (m1,new_n,c) e
+typist x@(Eabs a e) = do 
+                        s@(m,n,c) <- State.get
+                        let (m1, n_prime, new_n) = aux_lookup m a n
+                        State.put (m1, new_n, c)
+                        t2 <- typist e
+                        State.return $ (Tfun (Tvar n_prime) (t2))
 
 -- = "(Eapp " ++ typist e1 ++ " & " ++ typist e2 ++ ")"
-typist s@(m,n,c) x@(Eapp e1 e2) = ((m2,n2,c2), t1)
-                          where ((m1,n1,c1), t1) = typist (m,n,c) e1
-                                ((m2,n2,c2), t2) = typist (m1,n1,c1) e2
+typist x@(Eapp e1 e2) = do 
+                          t2 <- typist e2
+                          s@(m,n,c) <- State.get
+                          let a = Tvar n
+                          State.put (m,n+1,c)   -- create new var a for t1 == t2->a
+                          t1 <- typist e1
+                          s@(m1,n1,c1) <- State.get
+                          State.put (m1, n1, (t1, Tfun t2 a):c1)
+                          State.return $ a
+                        
                                 
+
+typist_wrapper e = State.runState (typist e) (Map.empty, 0, [])
 
 -- Solve for each
 solve :: String -> String
-solve = show . typist (Map.empty, 0, []) . readExpr
+solve = show . typist_wrapper . readExpr
 
 main = interact $ unlines . map solve . tail . lines
 
