@@ -66,20 +66,20 @@ typist x@(Evar a) = do
 
 -- = "(Eabs " ++ a ++ " " ++ typist e ++ ")"
 typist x@(Eabs a e) = do 
-                        s@(m,n,c) <- State.get
+                        t2 <- typist e
+                        (m,n,c) <- State.get
                         let (m1, n_prime, new_n) = aux_lookup m a n
                         State.put (m1, new_n, c)
-                        t2 <- typist e
                         State.return $ (Tfun (Tvar n_prime) (t2))
 
 -- = "(Eapp " ++ typist e1 ++ " & " ++ typist e2 ++ ")"
 typist x@(Eapp e1 e2) = do 
                           t2 <- typist e2
-                          s@(m,n,c) <- State.get
+                          (m,n,c) <- State.get
                           let a = Tvar n
                           State.put (m,n+1,c)   -- create new var a for t1 == t2->a
                           t1 <- typist e1
-                          s@(m1,n1,c1) <- State.get
+                          (m1,n1,c1) <- State.get
                           State.put (m1, n1, (t1, Tfun t2 a):c1)
                           State.return $ a
                         
