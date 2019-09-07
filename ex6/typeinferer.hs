@@ -2,10 +2,30 @@ import Data.Char
 import System.IO
 import Text.Read
 import qualified Data.Map.Strict as Map
+import qualified Data.IntMap.Strict as IntMap
 import qualified Control.Monad.State.Strict as State
 
 data Type  =  Tvar Int | Tfun Type Type                        deriving Eq
 data Expr  =  Evar String | Eabs String Expr | Eapp Expr Expr  deriving Eq
+
+-- A purely functional queue, using two lists
+data Queue a = Q [a] [a]
+
+qEmpty :: Queue a
+qEmpty = Q [] []
+
+qIsEmpty :: Queue a -> Bool
+qIsEmpty (Q l r) = null l && null r
+
+qAppendRight :: Queue a -> a -> Queue a
+qAppendRight (Q l r) x = Q l (x : r)
+
+qPopLeft :: Queue a -> (a, Queue a)
+qPopLeft (Q (x : xs) r) = (x, Q xs r)
+qPopLeft (Q [] []) = error "cannot pop"
+qPopLeft (Q [] r) = qPopLeft (Q (reverse r) [])
+
+qFromList = Q []
 
 -- Pretty printing of expressions
 
@@ -54,6 +74,12 @@ aux_lookup :: Map.Map String Int -> String -> Int
 aux_lookup m k n = case (Map.lookup k m) of
                       Just v -> (m, v, n)
                       Nothing -> (Map.insert k n m, n, n+1)
+
+-- aux_lookup_2 :: IntMap.IntMap Int Int -> String -> Int 
+--               -> (IntMap.IntMap String Int, Int, Int)
+aux_lookup_2 m k n = case (IntMap.lookup k m) of
+                      Just v -> (m, v, n)
+                      Nothing -> (IntMap.insert k n m, n, n+1)
  
 -- s@(m,n,c) == state@(var_map, next_number, constraint_set)
 typist :: Expr -> State.State (Map.Map String Int, Int, [(Type, Type)]) Type
@@ -91,27 +117,70 @@ show_up t1 t2 | t1 == t2 = True
 show_up t1 (Tfun t21 t22) = or [show_up t1 t21, show_up t1 t22]
 show_up t1 (Tvar _) = False
 
--- Apply substitution $s in constraint list $c
-subs c s
+
+-- Apply substitution $s in type $t
+subs :: (Type, Type) -> Type -> Type
+subs s@(t1, t2) t | t == t1 = t2
+subs s@(t1, t2) (Tfun ct1 ct2) = Tfun (subs s ct1) (subs s ct2)
+subs s@(t1, t2) t = t
+
+-- Apply substitution $s in constraint_tuple $c
+subt :: (Type, Type) -> (Type, Type) -> (Type, Type)
+subt s c@(ct1,ct2) = c_prime
+  where c_prime = (subs s ct1, subs s ct2)
 
 unify :: [(Type, Type)] -> [(Type, Type)] -> Maybe [(Type, Type)]
-unify [] solution = solution
-unify (t1,t2):c sol | t1 == t2 = unify c
-unify (t1@(Tvar a), t2):c sol | not show_up t1 t2 = unify c_prime ((t1, t2):sol)
-unify (t1, t2@(Tvar a)):c sol | not show_up t2 t1 = unify c_prime ((t2, t1):sol)
-unify (t1@(Tfun t11 t12), t2@(Tfun t21 t22)):c sol = unify ((t11,t21):(t12,t22):c) sol
-unify _ = Nothing
+unify [] solution = Just solution
+unify ((t1, t2):c) sol | t1 == t2 = unify c sol
 
-unify_wrapper (type, var_map, constraint_set) = 
-  case unify constraint_set [] of
-    Just sol -> sol -- subs on $type
-    Nothing -> 
+unify ((t1@(Tvar a), t2):c) sol | not (show_up t1 t2) = 
+  unify c_prime ((t1, t2):sol) 
+  where c_prime = map (subt (t1,t2)) c
 
+unify ((t1, t2@(Tvar a)):c) sol | not (show_up t2 t1) = 
+  unify c_prime ((t2, t1):sol) 
+  where c_prime = map (subt (t1,t2)) c
 
+unify ((t1@(Tfun t11 t12), t2@(Tfun t21 t22)):c) sol = 
+  unify ((t11,t21):(t12,t22):c) sol
+
+unify ((_,_):_) _ = Nothing
+
+unify_wrapper :: (Type, (Map.Map String Int, Int, [(Type, Type)])) 
+                -> Maybe Type
+unify_wrapper (t, (var_map, _, constraint_set)) = 
+  case (unify constraint_set []) of
+    -- Just sol -> Just (t, sol) -- subs on $t(ype) with fold
+    Just sol -> Just (substitution t (qFromList sol)) -- subs on $t(ype) with fold
+    Nothing -> Nothing
+
+substitution :: Type -> Queue (Type, Type) -> Type
+substitution t (Q [] []) = t
+substitution t qs = substitution new_type new_qs
+                    where (s, new_qs) = qPopLeft qs
+                          new_type = subs s t
+
+reassign :: Type -> State.State (IntMap.IntMap Int, Int) Type
+reassign (Tfun t1 t2) = do 
+                          nt1 <- reassign t1
+                          nt2 <- reassign t2
+                          return $ Tfun nt1 nt2
+reassign (Tvar a) = do 
+                      (m, n) <- State.get
+                      let (new_m, n_prime, new_n) = aux_lookup_2 m a n
+                      State.put (new_m, new_n)
+                      return $ Tvar n_prime
+
+reassign_wrapper :: Type -> Type
+reassign_wrapper t = fst $ State.runState (reassign t) (IntMap.empty, 0)
+
+prettify :: Maybe Type -> String
+prettify Nothing = "type error"
+prettify (Just t) = show $ reassign_wrapper t
 
 -- Solve for each
 solve :: String -> String
-solve = show . unify_wrapper . typist_wrapper . readExpr
+solve = prettify . unify_wrapper . typist_wrapper . readExpr
 
 main = interact $ unlines . map solve . tail . lines
 
@@ -120,3 +189,4 @@ main = interact $ unlines . map solve . tail . lines
 -- https://eli.thegreenplace.net/2018/type-inference/
 -- https://eli.thegreenplace.net/2018/unification/
 -- https://mmhaskell.com/monads-5
+-- https://courses.softlab.ntua.gr/pl2/2017b/examples/queue.hs
