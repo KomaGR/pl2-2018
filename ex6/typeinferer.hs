@@ -93,15 +93,22 @@ typist x@(Evar a) = do
 -- = "(Eabs " ++ a ++ " " ++ typist e ++ ")"
 typist x@(Eabs a e) = do
                         (m,n,c) <- State.get
-                        let (m1, n_prime, new_n) = aux_lookup m a n
-                        State.put (m1, new_n, c)
+                        let (oldval, m1) = Map.insertLookupWithKey f a n m
+                                           where f k new old = new
+                        -- let (m1, n_prime, new_n) = aux_lookup m a n
+                        State.put (m1, n+1, c)
                         t2 <- typist e
-                        State.return $ (Tfun (Tvar n_prime) (t2))
+                        (m2,n2,c2) <- State.get
+                        let m3 = case oldval of
+                                   Just val -> Map.insert a val m2
+                                   Nothing -> m2
+                        State.put (m3, n2, c2)
+                        State.return $ (Tfun (Tvar n) (t2))
 
 -- = "(Eapp " ++ typist e1 ++ " & " ++ typist e2 ++ ")"
 typist x@(Eapp e1 e2) = do 
-                          t1 <- typist e1
                           t2 <- typist e2
+                          t1 <- typist e1
                           (m,n,c) <- State.get
                           let a = Tvar n        -- create new var a for t1 == t2->a
                           State.put (m,n+1,c)     
