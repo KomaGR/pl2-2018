@@ -1,3 +1,8 @@
+-- Γλώσσες Προγραμματισμού 2 2018
+-- Ορέστης Καπαρουνάκης 03114057
+-- Άσκηση 6 - Εξαγωγή Τύπων
+-- Comments:
+-- Does not do β-reductions
 import Data.Char
 import System.IO
 import Text.Read
