@@ -1,0 +1,265 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[greek, english]{babel}
+\usepackage{lmodern}
+\usepackage{hyperref}
+
+\allowdisplaybreaks
+
+
+\newcommand{\whilelang}{\textrm{\textbf{WHILE}$^{cons}$\ }}
+\newcommand{\gr}{\textgreek{}}
+
+
+\title{Exercise 7: Denotational Semantics}
+\author{Orestis Kaparounakis}
+\date{\today}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+    This is a report for Exercise 7, year 2018, of the course Programming
+    Languages II (National Technical University of Athens).
+    The exercise is available at \url{https://courses.softlab.ntua.gr/pl2/2018b/exercises/densem.pdf}.
+    In this report the denotational semantics of the language \whilelang
+    are defined.
+\end{abstract}
+\section{\textgreek{Γραμματική της} \whilelang}
+\textgreek{Η αφηρημένη σύνταξη της} \whilelang
+\textgreek{έχει ήδη οριστεί στην εκφώνηση της άσκησης αλλά
+επαναλαμβάνεται εδώ για πληρότητα}. 
+
+\vspace{-1em}
+\begin{align*}
+  C &::= \textrm{skip} \,|\, x ::= E \,|\, C_0\,;\,C_1
+  \,|\, \textrm{if}\, E\, \textrm{then}\, C_0\, \textrm{else}\, C_1 
+  \,|\, \textrm{for}\, E \, \textrm{do} \, C
+  \,|\, \textrm{while}\, E\, \textrm{do}\, C. \\
+  E &::= \textrm{0}  \,|\, \textrm{succ}\, E  \,|\, \textrm{pred} E
+  \,|\, \textrm{true}  \,|\, \textrm{false}  \,|\, E_0 < E_1
+  \,|\, E_0 = E_1  \,|\, \textrm{not}\, E \\
+  &~\,|~~~ \textrm{if}\, E\, \textrm{then}\, C_0\, \textrm{else}\, C_1
+  \,|\,E_0 : E_1  \,|\, \textrm{hd}\, E  \,|\, \textrm{tl}\, E.
+\end{align*}
+
+% \textgreek{Εφόσον πλέον δεν διαχωρίζουμε τις λογικές από τις 
+% αριθημτικές εκφράσεις κάνουμε την ιστορικά διάσημη παραδοχή ότι
+% σε} context \textgreek{λογικής έκφρασης θα είναι}
+% $0=\textrm{false}$ \textgreek{ενώ οτιδήποτε άλλο θα αποτιμάται σε} true.
+
+\section{\textgreek{Δηλωτική σημασιολογία της} \whilelang}
+\subsection{\textgreek{Πεδίο των σημασιολογικών τιμών}}
+\textgreek{Το πεδίο} (domain) \textgreek{των σημασιολογικών τιμών
+των εκφράσεων, το οποίο θα συμβολίζουμε με $\mathbb{E}$, 
+με μια πρώτη ματιά, ορίζεται αναδρομικά.
+Αποτελείται από τα άτομα των πεδίων $\mathbb{N}$ και $\mathbb{T}$
+\footnote{Τα πεδία αυτά ορίζονται στις διαφάνειες.}, 
+αλλά και από ζεύγη} (cons cells)
+\textgreek{τιμών, οι οποίες μπορεί να είναι είτε άτομα 
+είτε άλλα ζεύγη. Δηλαδή το πεδίο $\mathbb{E}$ θα συγκροτείται
+και από αντίγραφα του εαυτού του, είναι δηλαδή ανακλαστικό
+} (reflexive).
+\textgreek{Παρατηρούμε ότι ο ορισμός αυτός παίρνει την
+μορφή δέντρου. Η πεδιακή εξίσωση (ισομορφισμός) που θέλουμε να μελετήσουμε εδώ,
+σύμφωνα και με την ανάλυση του} D. Scott~\cite{scott1982domains},
+\textgreek{είναι η}
+
+\begin{equation}
+  \label{eq:tree_rec}
+  \mathbb{E} \cong \mathbb{A} + (\mathbb{E} \times \mathbb{E}).
+\end{equation}
+
+\textgreek{Αν υπάρχει τέτοιο πεδίο $\mathbb{E}$ τότε λέμε ότι τα στοιχεία 
+του είναι είτε} bottom~($\bot$)
+\textgreek{, είτε στοιχεία του $\mathbb{A}$, που αναπαριστά 
+τα άτομα στοιχεία του πεδίου 
+(με $\mathbb{A} = \mathbb{N} \cup \mathbb{T}$), 
+είτε ζεύγη από στοιχεία του $\mathbb{E}$.
+
+Αρχικά, θέλουμε να ορίσουμε τα άτομα του πεδίου $\mathbb{E}$.
+Δηλαδή θέλουμε να βάλουμε ``αντίγραφα'' των στοιχείων του
+$\mathbb{A}$. Ορίζουμε $\bot_E = (\bot, \bot)$, το στοιχείο του 
+$\mathbb{E}$ που σε οποιαδήποτε περίπτωση πρέπει να υπάρχει.
+Επομένως, ένα στοιχείο $X \in \mathbb{A}$ θα είναι
+$(X,\bot)$ στο πεδίο $\mathbb{E}$.
+Τα υπόλοιπα στοιχεία θα είναι της μορφής $(\bot, Y)$, όπου το
+$Y \in \mathbb{U} ~|~ \mathbb{U} \cong \mathbb{E} \times \mathbb{E}$ 
+αφορά τα άλλου είδους στοιχεία του $\mathbb{E}$. 
+Έτσι, το πεδίο $\mathbb{E}$ ορίζεται σαν διαχωρισμένο 
+άθροισμα των $\mathbb{A}$ και $\mathbb{U}$.
+Το $\mathbb{U}$ ορίζεται ως το γινόμενο όλων των στοιχείων
+που ανήκουν στο $\mathbb{E}$. 
+θα είναι, λοιπόν, $(\bot, Y) \in \mathbb{E}$ για κάθε 
+$Y \in \mathbb{U}$.
+Έτσι, έχουμε τον επαγωγικό ορισμό του πεδίου $\mathbb{E}$:
+
+\begin{enumerate}
+  \item $\bot_E \in \mathbb{E}$,
+  \item $(X,\bot) \in \mathbb{E}$ αν $X \in \mathbb{A}$,
+  \item $(\bot, (Y,\bot_E)) \in \mathbb{E}$ και 
+  $(\bot, (\bot_E, Z)) \in \mathbb{E}$ 
+  για κάθε $Y,Z \in \mathbb{E}$.
+\end{enumerate}}
+
+\textgreek{
+Μένει να ορίσουμε την διάταξη $\sqsubseteq_E$ 
+για το πεδίο $\mathbb{E}$. Από την συνέχεια της ανάλυσης 
+στο~\cite{scott1982domains} έχουμε:
+
+\begin{enumerate}
+  \item $\bot \sqsubseteq_E u$ για κάθε $u$,
+  \item $Y \sqsubseteq_E u \cup \{\bot_E\}$ 
+  αν $Y \sqsubseteq_E u$,
+  \item $(W, \bot) \sqsubseteq_E 
+  \{(X,\bot)~|~X \in w\}$ αν $W \sqsubseteq_A w$,
+  \item $(\bot,(X, \bot_E)) \sqsubseteq_E 
+  \{(\bot, (Y, \bot_E)) ~|~ Y \in u\} \cup
+  \{(\bot, (\bot_E, Z))\}$ αν $X \sqsubseteq_E u$,
+  \item $((X, \bot_E),\bot) \sqsubseteq_E 
+  \{(\bot, (Y, \bot_E)) ~|~ Y \in u\} \cup
+  \{(\bot, (\bot_E, Z))\}$ αν $X \sqsubseteq_E u$.
+\end{enumerate}
+}
+
+\subsection{\textgreek{Σημασιολογικές εξισώσεις}}
+\textgreek{Ορίζουμε ξανά τις σημασιολογικές συναρτήσεις
+από τις διαφάνειες:}
+
+\vspace{-1em}
+\begin{align*}
+  \mathcal{C}[\![\mathbf{C}]\!] &: S \rightarrow S_\bot\\
+  \mathcal{E}[\![\mathbf{E}]\!] &: S \rightarrow \mathbb{E}\\
+\end{align*}
+
+\vspace{-1em}
+\textgreek{όπου πλεον οι σημασιολογικές τιμές ανήκουν 
+στο πεδίο $\mathbb{E}$ και δεν διαχωρίζονται
+με βάση τον τύπο τους.
+
+Ορίζουμε τώρα τις σημασιολογικές εξισώσεις της
+γλώσσας} \whilelang.
+
+\begin{align*}
+  \mathcal{C}[\![\textrm{skip}]\!]\,s &= s\\
+\
+  \mathcal{C}[\![\mathbf{x} := \mathbf{E}]\!]\,s &= 
+    s[\mathbf{x} := \mathcal{E}[\![\mathbf{E}]\!]\,s]\\
+\
+  \mathcal{C}[\![\mathbf{C}_0;\mathbf{C}_1]\!]\,s &= 
+    \mathcal{C}[\![\mathbf{C}_1]\!]^+
+    (\mathcal{C}[\![\mathbf{C}_0]\!]\,s)\\
+\
+  \mathcal{C}[\![\textrm{if \textbf{E} 
+                         then \textbf{C}$_0$
+                         else \textbf{C}$_1$}]\!]\,s &=
+    \begin{cases}
+      \mathcal{C}[\![\mathbf{C}_0]\!]\,s, & 
+      \textgreek{\textrm{εαν}}~
+      \mathcal{E}[\![\mathbf{E}]\!]\,s = \mathit{true}\\
+      \mathcal{C}[\![\mathbf{C}_1]\!]\,s, & 
+      \textgreek{\textrm{διαφορετικά}}
+    \end{cases}\\
+\
+  \mathcal{C}[\![\textrm{for \textbf{E} 
+                         do \textbf{C}}]\!]\,s &=
+    (\mathcal{C}[\![\mathbf{C}]\!]^+)^n(s),~
+    \textgreek{\textrm{όπου}}~n = \mathcal{E}[\![\mathbf{E}]\!]\,s\\
+\
+  \mathcal{C}[\![\textrm{while \textbf{E} 
+                         do \textbf{C}}]\!]\,s &=
+  \textrm{fix}\,F\,s,~\textgreek{\textrm{όπου}}\\
+  F f s &= \begin{cases}
+    f(\mathcal{C}[\![\mathbf{C}]\!]\,s), & \textgreek{\textrm{εαν}}~
+    \mathcal{E}[\![\mathbf{E}]\!]\,s = \mathit{true}\\
+    s,  & \textgreek{\textrm{εαν}}~
+    \mathcal{E}[\![\mathbf{E}]\!]\,s = \mathit{false}
+    \end{cases}
+\end{align*}
+
+\begin{align*}
+  \mathcal{E}[\![\textrm{0}]\!]\,s &= 0\\
+\
+  \mathcal{E}[\![\textrm{succ \textbf{E}}]\!]\,s &= 
+    \mathcal{E}[\![\textrm{\textbf{E}}]\!]\,s + 1\\
+\
+  \mathcal{E}[\![\textrm{pred \textbf{E}}]\!]\,s &= 
+    \mathcal{E}[\![\textrm{\textbf{E}}]\!]\,s - 1\\
+\
+  \mathcal{E}[\![\textrm{true}]\!]\,s &= \mathit{true}\\
+\
+  \mathcal{E}[\![\textrm{false}]\!]\,s &= \mathit{false}\\
+\
+  \mathcal{E}[\![\mathbf{E}_0<\mathbf{E}_1]\!]\,s &=
+    \begin{cases}
+      \mathit{true},  & \textgreek{\textrm{εαν}}~
+      \mathcal{E}[\![\mathbf{E}_0]\!]\,s < \mathcal{E}[\![\mathbf{E}_1]\!]\,s\\      
+      \mathit{false}, & \textgreek{\textrm{διαφορετικά}}      
+    \end{cases}\\
+\
+  \mathcal{E}[\![\mathbf{E}_0=\mathbf{E}_1]\!]\,s &=
+    \begin{cases}
+      \mathit{true},  & \textgreek{\textrm{εαν}}~
+      \mathcal{E}[\![\mathbf{E}_0]\!]\,s = \mathcal{E}[\![\mathbf{E}_1]\!]\,s\\      
+      \mathit{false}, & \textgreek{\textrm{διαφορετικά}}      
+    \end{cases}\\
+\
+  \mathcal{E}[\![\textrm{not}~\mathbf{E}]\!]\,s &=
+    \begin{cases}
+      \mathit{true},  & \textgreek{\textrm{εαν}}~
+      \mathcal{E}[\![\mathbf{E}]\!]\,s = \mathit{false}\\     
+      \mathit{false},  & \textgreek{\textrm{εαν}}~
+      \mathcal{E}[\![\mathbf{E}]\!]\,s = \mathit{true}      
+    \end{cases}\\
+\
+  \mathcal{E}[\![\textrm{if \textbf{E}$_0$
+                        then \textbf{E}$_1$
+                        else \textbf{E}$_2$}]\!]\,s &=
+    \begin{cases}
+      \mathcal{E}[\![\mathbf{E}_1]\!]\,s, & 
+      \textgreek{\textrm{εαν}}~
+      \mathcal{E}[\![\mathbf{E}_0]\!]\,s = \mathit{true}\\
+      \mathcal{E}[\![\mathbf{E}_2]\!]\,s, & 
+      \textgreek{\textrm{διαφορετικά}}
+    \end{cases}\\
+\
+  \mathcal{E}[\![\mathbf{E}_0 : \mathbf{E}_1]\!]\,s &=
+    (\bot, (\mathcal{E}[\![\mathbf{E}_0]\!]\,s,
+    \mathcal{E}[\![\mathbf{E}_1]\!]\,s))\\
+\
+  \mathcal{E}[\![\textrm{hd}~\mathbf{E}]\!]\,s &=
+  \begin{cases}
+    \mathcal{E}[\![\mathbf{E}_0]\!]\,s, & 
+    \textgreek{\textrm{εαν}}~
+    \mathcal{E}[\![\mathbf{E}]\!]\,s =
+    \mathcal{E}[\![\mathbf{E}_0 : \mathbf{E}_1]\!]\,s\\
+    \bot_E, & \textgreek{\textrm{διαφορετικά}}
+  \end{cases}\\
+\
+  \mathcal{E}[\![\textrm{tl}~\mathbf{E}]\!]\,s &=
+  \begin{cases}
+    \mathcal{E}[\![\mathbf{E}_1]\!]\,s, & 
+    \textgreek{\textrm{εαν}}~
+    \mathcal{E}[\![\mathbf{E}]\!]\,s =
+    \mathcal{E}[\![\mathbf{E}_0 : \mathbf{E}_1]\!]\,s\\
+    \bot_E, & \textgreek{\textrm{διαφορετικά}}
+  \end{cases}\\
+\end{align*}
+
+\textgreek{όπου έχουν γίνει οι αντικαταστάσεις
+$X \leftarrow (X, \bot)~|~X \in \mathbb{A}$,
+δηλαδή όπου εμφανίζονται τα άτομα του πεδίου
+$\mathbb{E}$, για συντομία και ευκολότερη ανάγνωση.}
+
+\textgreek{Φυσικά, για να βγάζουν τα παραπάνω νόημα στο} 
+runtime \textgreek{θα πρέπει να διασφαλίζεται δυναμικά
+η ορθή χρήση των τύπων. Δηλαδή ότι δεν γίνεται
+χρήση των λογικών τιμών εκεί που έχουν νόημα μόνο
+αριθμητικές ή και το ανάποδο.}
+
+
+\newpage
+\nocite{*}
+\bibliography{def}
+\bibliographystyle{plain}
+\end{document}
