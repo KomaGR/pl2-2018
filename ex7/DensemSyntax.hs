@@ -1,3 +1,4 @@
+module DensemSyntax where
 import Data.Char
 import Text.Read
 import Text.Read.Lex
@@ -169,7 +170,7 @@ instance Read C where
 
 -- Main function: parsing a statement and pretty-printing
 
-main = do  input <- getContents
-           let c :: C
-               c = read input
-           print c
+-- main = do  input <- getContents
+--            let c :: C
+--                c = read input
+--            print c
