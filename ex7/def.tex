@@ -231,18 +231,24 @@ $Y \in \mathbb{U}$.
   \begin{cases}
     \mathcal{E}[\![\mathbf{E}_0]\!]\,s, & 
     \textgreek{\textrm{εαν}}~
-    \mathcal{E}[\![\mathbf{E}]\!]\,s =
-    \mathcal{E}[\![\mathbf{E}_0 : \mathbf{E}_1]\!]\,s\\
-    \bot_E, & \textgreek{\textrm{διαφορετικά}}
+    % \mathcal{E}[\![\mathbf{E}]\!]\,s =
+    % \mathcal{E}[\![\mathbf{E}_0 : \mathbf{E}_1]\!]\,s\\
+    (\bot, (\mathcal{E}[\![\mathbf{E}_0]\!]\,s,
+    \bot_E) \sqsubseteq_E
+    \mathcal{E}[\![\mathbf{E}]\!]\,s\\
+    \textgreek{\textrm{μη ορισμένο}}, & \textgreek{\textrm{διαφορετικά}}
   \end{cases}\\
 \
   \mathcal{E}[\![\textrm{tl}~\mathbf{E}]\!]\,s &=
   \begin{cases}
     \mathcal{E}[\![\mathbf{E}_1]\!]\,s, & 
     \textgreek{\textrm{εαν}}~
-    \mathcal{E}[\![\mathbf{E}]\!]\,s =
-    \mathcal{E}[\![\mathbf{E}_0 : \mathbf{E}_1]\!]\,s\\
-    \bot_E, & \textgreek{\textrm{διαφορετικά}}
+    % \mathcal{E}[\![\mathbf{E}]\!]\,s =
+    % \mathcal{E}[\![\mathbf{E}_0 : \mathbf{E}_1]\!]\,s\\
+    (\bot, (\bot_E,
+    \mathcal{E}[\![\mathbf{E}_1]\!]\,s) \sqsubseteq_E
+    \mathcal{E}[\![\mathbf{E}]\!]\,s\\
+    \textgreek{\textrm{μη ορισμένο}}, & \textgreek{\textrm{διαφορετικά}}
   \end{cases}\\
 \end{align*}
 
