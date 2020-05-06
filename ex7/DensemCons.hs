@@ -110,4 +110,6 @@ ex2 = Cseq (Cassign "x" (makeE 42))
 
 
 -- Sources:
--- https://www.schoolofhaskell.com/user/mutjida/typed-tagless-final-linear-lambda-calculus/6-recursive-types
+-- https://courses.softlab.ntua.gr/pl2/2014b/examples/densem.hs
+-- http://learnyouahaskell.com/making-our-own-types-and-typeclasses
+-- https://tuttlem.github.io/2013/01/04/recursive-data-structures-in-haskell.html
