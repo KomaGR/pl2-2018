@@ -1,0 +1,439 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath, amssymb}
+\usepackage{semantic}
+\usepackage[greek, english]{babel}
+\usepackage{lmodern}
+\usepackage{hyperref}
+
+\newcommand{\spacing}{1em}
+\allowdisplaybreaks
+
+\title{Exercise 8: Type Systems}
+\author{Orestis Kaparounakis\\
+\small\textgreek{Α.Μ.}: 03114057, email: orestis.kapar@hotmail.com}
+\date{\today}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+    This is a report for Exercise 8, year 2018, of the course Programming
+    Languages II (National Technical University of Athens).
+    The exercise is available at \url{https://courses.softlab.ntua.gr/pl2/2018b/exercises/typesys.pdf}.
+    In this report the big-step (or natural) semantics of the subject language
+    are defined.
+\end{abstract}
+
+\setcounter{section}{-1}
+\section{\textgreek{Σύνταξη της υποκείμενης γλώσσας}}
+\textgreek{Παρακάτω συλλέγουμε την σύνταξη που προκύπτει για 
+την υποκείμενη γλώσσα, λαμβάνοντας υπόψη τις διαφάνειες
+4--12, 13--15 και 32--39.}
+
+\vspace{-1em}
+\begin{align*}
+  \tau &::= \textrm{Int} \,|\, \textrm{Bool} \,|\, \tau_1 \rightarrow \tau_2 
+  \,|\, \textrm{Ref}\, \tau.\\
+\
+  e &::= n  \,|\, -e  \,|\, e_1 + e_2
+  \,|\, true  \,|\, false \,|\, \neg e \,|\, e_1 \wedge e_2 \,|\, e_0 < e_1
+  \,|\,  \textrm{if}\, e\, \textrm{then}\, e_1\, \textrm{else}\, e_2\\
+  &~~~|~~ x \,|\, \lambda x : \tau . e \,|\, e_1\,e_2
+  \,|\, \textrm{ref}\, e \,|\, !e \,|\, e_1 := e_2 \,|\, \textrm{loc}_i.\\
+\
+  v &::= n \,|\, true \,|\, false \,|\, \lambda x : \tau . e 
+    \,|\, \textrm{loc}_i.\\
+\
+  s &::= (e, m).
+\end{align*}
+
+\textgreek{Όπου, ο κανόνας των $\tau$ αναφέρεται στους τύπους που δύναται
+αποκτήσουν οι εκφράσεις $e$, ενώ $v$ είναι αντίστοιχα οι τιμές. 
+Το $s$ αναπαριστά το περιβάλλον αποτίμησης, όπου πλέον 
+λαμβάνεται υπόψη η κατάστασης της μνήμης (ως $m$).}
+
+\section{\textgreek{Σημασιολογία μεγάλων βημάτων}}
+\label{sec:big-step-sos}
+\textgreek{Αναπτύσουμε τώρα την λειτουργική σημασιολογία μεγάλων βημάτων
+για την υποκείμενη γλώσσα. Ξεκινάμε με τα αξιώματα για τις τιμές $v$ και 
+έπειτα προχωράμε στους συμπερασματικούς κανόνες για τις εκφράσεις $e$.
+Στους κανόνες εμπλέκεται και η κατάσταση της μνήμης $m$, καθώς σε αρκετούς
+μεταβάλλεται. Αυτό συμβαίνει επειδή κατά την αποτίμηση οποιασδήποτε
+έκφρασης $e$ ενδέχεται να παρεμβληθούν δεσμεύσεις και συνωνυμίες.}
+
+\begin{align*}
+\inference[\textbf{Vnum:}]{}{
+    \langle n, m \rangle \Downarrow \langle n \rangle
+}
+\end{align*}
+\begin{align*}
+&\inference[\textbf{Vtrue:}]{}{
+    \langle true, m \rangle \Downarrow \langle true \rangle
+}
+&\inference[\textbf{Vfalse:}]{}{
+    \langle false, m \rangle \Downarrow \langle false \rangle
+}
+\\[\spacing]
+&\inference[\textbf{Vlambda:}]{}{
+    \langle \lambda x : \tau . e, m \rangle \Downarrow \langle \lambda x : \tau . e \rangle
+}
+&\inference[\textbf{Vloc:}]{}{
+    \langle \textrm{loc}_i, m \rangle \Downarrow \langle \textrm{loc}_i \rangle
+}
+\end{align*}
+\vspace{2em}
+\begin{align}
+&\inference[\textbf{Eadd:}]{
+    \langle e_1, m \rangle \Downarrow \langle n_1, m' \rangle &&
+    \langle e_2, m' \rangle \Downarrow \langle n_2, m'' \rangle
+}{
+    \langle e_1 + e_2, m \rangle \Downarrow \langle n_1 + n_2, m'' \rangle
+}
+\\[\spacing]
+&\inference[\textbf{Esign:}]{
+    \langle e, m \rangle \Downarrow \langle n, m' \rangle
+}{
+    \langle -e, m \rangle \Downarrow \langle -n, m' \rangle
+}
+\\[\spacing]
+&\inference[\textbf{EnotTrue:}]{
+    \langle e, m \rangle \Downarrow \langle true, m' \rangle
+}{
+    \langle \neg e, m \rangle \Downarrow \langle false, m'  \rangle
+}
+\\[\spacing]
+&\inference[\textbf{EnotFalse:}]{
+    \langle e, m \rangle \Downarrow \langle false, m' \rangle
+}{
+    \langle \neg e, m \rangle \Downarrow \langle true, m'  \rangle
+}
+\\[\spacing]
+&\inference[\textbf{EfalseAnd:}]{
+    \langle e_1, m \rangle \Downarrow \langle false, m' \rangle
+}{
+    \langle e_1 \wedge e_2, m \rangle \Downarrow \langle false, m'  \rangle
+}
+\\[\spacing]
+&\inference[\textbf{EtrueAndFalse:}]{
+    \langle e_1, m \rangle \Downarrow \langle true, m' \rangle &
+    \langle e_2, m' \rangle \Downarrow \langle false, m'' \rangle
+}{
+    \langle e_1 \wedge e_2, m \rangle \Downarrow \langle false, m''  \rangle
+}
+\\[\spacing]
+&\inference[\textbf{EtrueAndTrue:}]{
+    \langle e_1, m \rangle \Downarrow \langle true, m' \rangle &
+    \langle e_2, m' \rangle \Downarrow \langle true, m'' \rangle
+}{
+    \langle e_1 \wedge e_2, m \rangle \Downarrow \langle true, m''  \rangle
+}
+\\[\spacing]
+&\inference[\textbf{EifTrue:}]{
+    \langle e, m \rangle \Downarrow \langle true, m' \rangle &
+    \langle e_1, m' \rangle \Downarrow \langle v_1, m'' \rangle
+}{
+    \langle \textrm{if}\, e\, \textrm{then}\, e_1\, \textrm{else}\, e_2, m \rangle 
+        \Downarrow \langle v_1, m''  \rangle
+}
+\\[\spacing]
+&\inference[\textbf{EifFalse:}]{
+    \langle e, m \rangle \Downarrow \langle false, m' \rangle &
+    \langle e_2, m' \rangle \Downarrow \langle v_2, m'' \rangle
+}{
+    \langle \textrm{if}\, e\, \textrm{then}\, e_1\, \textrm{else}\, e_2, m \rangle 
+        \Downarrow \langle v_2, m''  \rangle
+}
+\\[\spacing]
+&\inference[\textbf{EltTrue:}]{
+    \langle e_1, m \rangle \Downarrow \langle n_1, m' \rangle &
+    \langle e_2, m' \rangle \Downarrow \langle n_2, m'' \rangle
+}{
+    \langle e_1 < e_2 \rangle \Downarrow \langle true, m''  \rangle
+}, ~\textrm{if}~ n_1 <_{Int} n_2
+\\[\spacing]
+&\inference[\textbf{EltFalse:}]{
+    \langle e_1, m \rangle \Downarrow \langle n_1, m' \rangle &
+    \langle e_2, m' \rangle \Downarrow \langle n_2, m'' \rangle
+}{
+    \langle e_1 < e_2 \rangle \Downarrow \langle false, m''  \rangle
+}, ~\textrm{if}~ n_1 >_{Int} n_2
+\\[\spacing]
+&\inference[\textbf{Evar:}]{}{
+    \langle x, m \rangle \Downarrow \langle m(x) \rangle
+}, ~\textrm{if}~ m(x) \neq \bot
+\\[\spacing]
+&\inference[\textbf{Eappl:}]{
+    \langle e_1, m \rangle \Downarrow \langle \lambda x : \tau . e , m' \rangle & \hfill\\
+    \langle e_2, m' \rangle \Downarrow \langle v_2, m'' \rangle &
+    \langle e[x \mapsto v_2], m'' \rangle \Downarrow \langle v_3, m''' \rangle
+}{
+    \langle e_1 \, e_2, m \rangle \Downarrow \langle v_3, m'''  \rangle
+}
+\\[\spacing]
+&\inference[\textbf{Ealloc:}]{
+    \langle e, m \rangle \Downarrow \langle v, m' \rangle
+}{
+    \langle \textrm{ref}\, e, m \rangle \Downarrow \langle \textrm{loc}_i, m\{i \mapsto v\}  \rangle
+},~\textrm{where}~ i = \textrm{max}(\textrm{dom}(m)) + 1
+\\[\spacing]
+&\inference[\textbf{Ederef:}]{
+    \langle e, m \rangle \Downarrow \langle \textrm{loc}_i, m' \rangle
+}{
+    \langle !e, m \rangle \Downarrow \langle m'(\textrm{loc}_i), m'  \rangle
+},~\textrm{if}~ m'(\textrm{loc}_i) \neq \bot
+\\[\spacing]
+&\inference[\textbf{Ealias:}]{\label{eq:Ealias}
+    \langle e_1, m \rangle \Downarrow \langle \textrm{loc}_i, m' \rangle &
+    \langle e_2, m' \rangle \Downarrow \langle v, m'' \rangle
+}{
+    \langle e_1 := e_2, m \rangle \Downarrow \langle (\,), m''\{i \mapsto v\}  \rangle
+}, \star
+\end{align}
+
+\textgreek{Στον κανόνα για την συνωνυμία} (aliasing) \ref{eq:Ealias} 
+\textgreek{η τιμή στην οποία αποτιμάται η έκφραση είναι η $(\,)$, ή αλλιώς
+$unit$.}
+% \textgreek{επιλέγουμε η τιμή στην οποία αποτιμάται η έκφραση να είναι η 
+% τιμή στην οποία αποτιμήθηκε το δεξί μέλος. 
+% Την επιλογή στηρίζουμε στον τρόπο αποτίμησης μιας τέτοιας έκφρασης στην \
+% γλώσσα} C. \textgreek{Είναι μια λογική επιλογή καθώς, αν δεν γίνεται κάπως έτσι,
+% η γλώσσα δεν θα μπορεί να σειροποιεί εκφράσεις} (sequencing)\textgreek{, 
+% γιατί δεν έχει κάτι όπως το} ; \textgreek{της} C.
+% \textgreek{Η μόνη επιλογή είναι μέσω της σύνθεσης.}
+
+\section{\textgreek{Ασφάλεια}}
+\textgreek{Το θεώρημα της ασφάλειας μιας γλώσσας προγραμματισμού είναι ισοδύναμο
+με την συνέπεια του συστήματος τύπων. Η διατύπωση της ασφάλειας απαρτίζεται
+από την διατύπωση του θεωρήματος προόδου και του θεωρήματος διατήρησης
+για το σύστημα τύπων.
+Η ``απλοϊκή'', αρχική μορφή των θεωρημάτων παρατίθεται παρακάτω.
+Η διατύπωση για την υποκείμενη γλώσσα γίνεται
+στην ενότητα~\ref{sec:preservation}.}
+
+\smallskip
+\noindent
+\textbf{\textgreek{Θεώρημα Προόδου} (Progress):}
+\textgreek{Αν $e : \tau$ τότε είτε $e$ είναι τιμή, είτε υπάρχει $e'$ τέτοιο
+ώστε $e -> e'$.}
+
+\smallskip
+\noindent
+\textbf{\textgreek{Θεώρημα Διατήρησης} (Preservation):}
+\textgreek{Αν $e : \tau$ και $e -> e'$ τότε $e' : \tau$.}
+
+\smallskip
+\textgreek{Αυτό που επιτυγχάνουν τα 2 θεωρήματα μαζί είναι ότι αν η έκφραση $e$ έχει τύπο,
+τότε η αποτίμησή της δεν μπορεί να κολλήσει.}
+
+\subsection{\textgreek{Κανόνες τύπων}}
+\textgreek{Ξεκινάμε διατυπώνοντας τους κανόνες των τύπων που 
+προκύπτουν με βάση την σημασιολογία στην 
+ενότητα~\ref{sec:big-step-sos} και τις διαφάνειες.
+Αρχικά για τις τιμές και έπειτα για τους συμπερασματικούς κανόνες των 
+εκφράσεων.
+Η σημειογραφία $e : \tau$, σημαίνει ότι η έκφραση $e$ έχει τύπο $\tau$.
+Με $\Gamma$ συμβολίζουμε τα περιβάλλοντα τύπων (ζεύγη $(x, \tau)$) ενώ
+με $M$ συμβολίζουμε τύπους μνήμης (π.χ. $\mathbb{N} \rightharpoonup \tau$).}
+
+
+\begin{align*}
+    \inference[]{}{
+        n : \textrm{Int}
+    }
+    &&
+    \inference[]{}{
+        true : \textrm{Bool}
+    }
+    &&
+    \inference[]{}{
+        false : \textrm{Bool}
+    }
+\end{align*}
+\begin{align*}
+    \inference[]{
+        \Gamma \cup \{x : \tau_1\} |- e : \tau_2
+    }{
+        \Gamma |-~ \lambda x:\tau_1 ~.~ e  : \tau_1 -> \tau_2
+    }&&
+    \inference[]{
+        M(i) : \tau
+    }{
+        \Gamma; M |-~ \textrm{loc}_i : \textrm{Ref}\, \tau
+    }
+\end{align*}
+
+\vspace{2em}
+\begin{align}
+&\inference[\textbf{Tadd:}]{
+    \Gamma |- e_1 : \textrm{Int}  &&
+    \Gamma |- e_2 : \textrm{Int}
+}{
+    \Gamma |- e_1 + e_2 : \textrm{Int}
+}
+\\[\spacing]
+&\inference[\textbf{Tsign:}]{
+    \Gamma |- e : \textrm{Int}
+}{
+    \Gamma |- -e : \textrm{Int}
+}
+\\[\spacing]
+&\inference[\textbf{Tnot:}]{
+    \Gamma |- e : \textrm{Bool}
+}{
+    \Gamma |- \neg e : \textrm{Bool}
+}
+\\[\spacing]
+&\inference[\textbf{Tand:}]{
+    \Gamma |- e_1 : \textrm{Bool} &
+    \Gamma |- e_2 : \textrm{Bool}
+}{
+    \Gamma |-  e_1 \wedge e_2 : \textrm{Bool}
+}
+\\[\spacing]
+&\inference[\textbf{Tif:}]{
+    \Gamma |- e : \textrm{Bool} &
+    \Gamma |- e_1 : \tau &
+    \Gamma |- e_2 : \tau
+}{
+    \Gamma |- \textrm{if}\, e\, \textrm{then}\, e_1\, \textrm{else}\, e_2 : \tau
+}
+\\[\spacing]
+&\inference[\textbf{Tlt:}]{
+    \Gamma |- e_1 : \textrm{Int} &
+    \Gamma |- e_2 : \textrm{Int}
+}{
+    \Gamma |- e_1 < e_2 : \textrm{Bool}
+}
+\\[\spacing]
+&\inference[\textbf{Tvar:}]{
+    (x,\tau) \in \Gamma
+}{
+    \Gamma |- x : \tau
+}
+\\[\spacing]
+&\inference[\textbf{Tappl:}]{
+    \Gamma |- e_1 : \tau_1 -> \tau_2 &
+    \Gamma |- e_2 : \tau_1
+}{
+    \Gamma |- e_1 \, e_2: \tau_2
+}
+\\[\spacing]
+&\inference[\textbf{Talloc:}]{
+    \Gamma |- e : \tau
+}{
+    \Gamma |- \textrm{ref}\, e : \textrm{Ref}\, \tau
+}
+\\[\spacing]
+&\inference[\textbf{Tderef:}]{
+    \Gamma |- e : \textrm{Ref}\, \tau
+}{
+    \Gamma |-~ ! e : \tau
+}
+\\[\spacing]
+&\inference[\textbf{Talias:}]{\label{eq:Talias}
+    \Gamma |- e_1 : \textrm{Ref}\, \tau &
+    \Gamma |- e_2 : \tau
+}{
+    \Gamma |- e_1 := e_2 : (\,)
+}
+\end{align}
+
+\subsection{\textgreek{Διατύπωση των θεωρημάτων}}
+\label{sec:progress}
+\label{sec:preservation}
+\textgreek{Το θεώρημα κανονικοποίησης (ή τερματισμού) δεν
+ισχύει διότι το σύστημα τύπων μπορεί να εμπεριέχει αναδρομή.
+Επομένως, δεν μπορούμε να δηλώσουμε ότι για μια έκφραση 
+$e : \tau$ θα υπάρχει πάντα τιμή $v$ έτσι ώστε 
+$\langle e, m \rangle \Downarrow \langle v, m' \rangle$.}
+
+\noindent
+\textgreek{\textbf{Διατύπωση της Προόδου.}}
+\textgreek{Για την πρόοδο μπορούμε να πούμε, με βάση τους κανόνες
+στις προηγούμενες ενότητες, ότι;εαν 
+\begin{itemize}
+    \setlength\itemsep{-0.2em}
+    \item $\varnothing ; M |- e : \tau$ και\
+    \item $\forall v, \neg ( \langle e, m \rangle \Downarrow \langle v, m' \rangle)$
+\end{itemize}
+τότε $\langle e, m \rangle \Downarrow_{\infty}$. Από αυτό ακολουθεί ότι;
+εαν
+$\varnothing; M |- e : \tau$, τότε είτε
+$\langle e, m \rangle \Downarrow_{\infty}$
+είτε υπάρχει τιμή $v$ τέτοια ώστε
+$\langle e, m \rangle \Downarrow \langle v, m' \rangle$~\cite{leroy2009coinductive}.
+}
+
+
+\textgreek{Σημειώνουμε $\Gamma |- m : M$ όταν}
+$\textrm{dom}(m) = \textrm{dom}(M)$
+\textgreek{και για κάθε}
+$i \in \textrm{dom}(m)$
+\textgreek{υπάρχει}
+$\Gamma ; M |- m(i) : M(i)$.
+
+\noindent
+\textgreek{\textbf{Διατύπωση της Διατήρησης.}}
+\textgreek{Για την διατήρηση μπορούμε να πούμε ότι;
+εαν 
+\begin{itemize}
+    \setlength\itemsep{-0.2em}
+    \item $\Gamma; M |- e : \tau$,
+    \item $\Gamma |- m : M$, και
+    \item $\langle e, m \rangle \Downarrow \langle v, m' \rangle$,
+\end{itemize}
+τότε υπάρχει κάποιο $M'$ τέτοιο ώστε,
+\begin{itemize}
+    \setlength\itemsep{-0.2em}
+    \item $M \sqsubseteq M'$,
+    \item $\Gamma |- m' : M'$, και
+    \item $\Gamma ; M' |- v : \tau$.
+\end{itemize}}
+
+
+\section{\textgreek{Σύγκριση}}
+\textgreek{Σε αυτήν την ενότητα συγκρίνουμε την σημασιολογία
+μικρών βημάτων, που αναπτύχθηκε στις διαλέξεις και βρίσκεται
+στις διαφάνειες, με αυτήν των μεγάλων βημάτων που 
+χρησιμοποιήθηκε παραπάνω.
+
+Εύκολα μπορούμε να διακρίνουμε τις διαφορές μεταξύ των 
+2 προσεγγίσεων. Η σημασιολογία μεγάλων βημάτων έχει το 
+πλεονέκτημα ότι συχνά καταλήγει σε απλούστερους και πιο 
+ευκολονόητους, με χαμηλότερες απαιτήσεις στην σχολαστικότητα.
+Αυτό μπορεί σε κάποιες περιπτώσεις να οδηγήσει σε 
+απλούστερες αποδείξεις κάποιων θεωρημάτων
+και συχνά αντιστοιχεί άμεσα με αποδοτική υλοποίηση
+διερμηνέα για μια γλώσσα~\cite{leroy2009coinductive},
+γι' αυτό λέγεται και ````φυσική'''' σημασιολογία. 
+Από την άλλη, στην ενότητα~\ref{sec:preservation} έγινε
+αντιληπτό ότι με την σημασιολογία μεγάλων βημάτων δεν
+μπορούμε να εντοπίσουμε αποκλίνουσες αποτιμήσεις
+γιατί δεν αντιστοιχούν σε κανόνες, οδηγώντας
+έτσι σε μια πιο ````αμήχανη'''' διατύπωση για το θεώρημα
+της προόδου.
+
+Η σημασιολογία μικρών βημάτων, εν αντιθέσει,
+ναι μεν απαιτεί να οριστούν πιο διεξοδικά οι βηματικοί κανόνες,
+δίνει, δε, μεγαλύτερο έλεγχο στις λεπτομέρειες των αποτιμήσεων
+(π.χ. σειρά αποτίμησης) και επιτρέπει έτσι την διατύπωση
+ακριβέστερα ορισμένων θεωρημάτων για την συμπεριφορά
+της γλώσσας. Έτσι, η αέναη εκτέλεση και ο μη-κανονικός
+τερματισμός (κόλλημα) δύναται αναγνωρίζονται ως κάτι διαφορετικό
+γιατί με κατάλληλα ορισμένους κανόνες οδηγούν σε διαφορετικά
+δέντρα~\cite{nielson2007semantics}. Αυτό την κάνει πιο βολική για χρήση στην απόδειξη
+του θεωρήματος της ασφάλειας.
+
+Σε γενικές γραμμές, η επιλογή του τρόπου έκφρασης 
+για την σημασιολογία μιας γλώσσας βολεύει να σχετίζεται
+με τα πράγματα τα οποία θα θέλαμε να αποδείξουμε για αυτήν.
+Ενώ η σημασιολογία μεγάλων βημάτων είναι συχνή στην επαλήθευση
+μεταγλωττιστών, αυτή των μικρών βημάτων επιτρέπει συμβατικές
+προσεγγίσεις στο θέμα της ασφάλειας μέσω λημμάτων προόδου 
+και διατήρησης~\cite{owens2016functional}.}
+
+\bigskip
+\newpage
+\nocite{*}
+\bibliography{opsem}
+\bibliographystyle{plain}
+\end{document}
