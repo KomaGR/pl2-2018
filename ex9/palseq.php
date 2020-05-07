@@ -89,9 +89,16 @@ function generate() {
 }
 
 
-function generate_string(Type $var = null)
+function generate_string($permited_chars = "abcdefghijklmnopqrstuvwxyz", $length = 6)
 {
-    # code...
+    $chars_length = strlen($permited_chars);
+    $output = "";
+    for ($i=0; $i < $length; $i++) { 
+      $randome_char = $input[mt_rand(0, $chars_length - 1)];
+      $output .= $randome_char;
+    }
+
+    return $output;
 }
 
 ?>
