@@ -14,14 +14,10 @@ if (isset($_GET['cheat'])) {
 if (isset($_GET['limit'])) {
     $limit = $_GET['limit'];
 } else {
-    $limit = 10;
+    $limit = 3;
 }
 
-if (isset($_GET['reset'])) {
-    session_reset();
-} else {
-    session_start();
-}
+session_start();
 
 function prime($p)
 {
@@ -56,6 +52,12 @@ function generate_string($chars = "abcdefghijklmnopqrstuvwxyz", $length = 6)
     return $output;
 }
 
+function solve($string)
+{
+    // exec("palicheck $string", $output);
+    return 42;
+}
+
 function microtime_float()
 {
     list($usec, $sec) = explode(" ", microtime());
@@ -77,59 +79,28 @@ if (!defined('PHP_INT_MAX')) {
     define('PHP_INT_MAX', get_int_max());
 }
 
-$max = array();
-$max[0] = 2;
-$max[1] = 10;
-$max[2] = 100;
-$max[3] = 1000;
-$max[4] = 10000;
-$max[5] = 100000;
-$max[6] = 1000000;
-$max[7] = 10000000;
-$max[8] = 100000000;
-$max[9] = 1000000000;
-$max[10] = PHP_INT_MAX;
-if ($max[10] > 10000000000) {
-    $max[10] = 10000000000;
-}
 
 function generate()
 {
-    global $max;
     global $permited_chars;
+    
+    $max = floor(pow(2, $_SESSION['count']+2));
+    if ($max > 1000)
+    {
+        $max = 1000;
+    }
 
-    $_SESSION['count']++;
-    $num = rand($max[$_SESSION['count'] - 1],
-        $max[$_SESSION['count']] - 1);
-
-    $length = rand($max[$_SESSION['count'] - 1],
-        $max[$_SESSION['count']] - 1);
+    // $_SESSION['count']++;
+    $num = rand(3, $max);
+    $length = rand(3, $max);
 
     $sub_permitted_chars = substr($permited_chars, 0, $_SESSION['count'] + 1);
-    $string = generate_string($sub_permitted_chars, $length);
+    
+    $string = generate_string($sub_permitted_chars, $length);    
+    $ans = solve($string);
+    
     $_SESSION['string'] = $string;
-
-    if ($_SESSION['count'] == 1) {
-        $ans = prime($num);
-    } else {
-        if ($num % 2 == 0) {
-            $num++;
-        }
-
-        $ans = rand(0, 999) < 500;
-        while (prime($num) != $ans || $num % 5 == 0) {
-            $num += 2;
-        }
-
-    }
-
-    $_SESSION['number'] = $num;
-    if ($ans) {
-        $_SESSION['answer'] = "yes";
-    } else {
-        $_SESSION['answer'] = "no";
-    }
-
+    $_SESSION['answer'] = $ans;
 }
 
 ?>
@@ -150,10 +121,13 @@ if (!isset($_SESSION['count']) || isset($_SESSION['reset'])) {
     $_SESSION['count'] = 0;
     $_SESSION['wrong'] = 0;
     $_SESSION['zero'] = microtime_float();
+    print "--Init/Reset--";
 }
-printf("Session count is: %d", $_SESSION['count']);
+printf("Steps: %d", $_SESSION['count']);
 if (isset($_SESSION['generate']) || $_SESSION['count'] == 0) {
+    $_SESSION['count']++;
     generate();
+    print "--Init/Generate--";
 }
 
 unset($_SESSION['generate']);
@@ -190,7 +164,7 @@ unset($_SESSION['reset']);
     <!-- Also add cheat answer here -->
     <?php if ($cheat) {
     printf("<td width=\"16\">&mdash;</td>\n");
-    printf("<td>if I were you, I'd answer %d</td>\n", ); //$_SESSION['answer']);
+    printf("<td>if I were you, I'd answer %d</td>\n", $_SESSION['answer']);
 }?>
 
     <!-- Need to generate question here -->
@@ -199,7 +173,8 @@ unset($_SESSION['reset']);
 
 </p>
 <table border="0" cellspacing="3">
-  <tr>
+<tr>
+    <?php if (! isset($_POST['answer'])) { ?>
     <form <?php echo "action=\"$self\""; ?> id="f" name="f" method="post">
     What is the least number of characters you need to remove?
     <table border="0" cellspacing="3">
@@ -208,20 +183,33 @@ unset($_SESSION['reset']);
     <td><input type="submit" class="button" name="submit" id="submit" value="Submit!" /></td>
     </tr>
     </table>
+    </form>
+
+    <?php } else {
+    } ?>
 <?php
 if (isset($_POST['answer'])) {
+    ?>
+    <form <?php echo "action=\"$self\""; ?> id="r" name="r" method="post">
+    <table border="0" cellspacing="2">
+    <tr>
+    <?php
     if ($_POST['answer'] == $_SESSION['answer']) {
         printf("<td><span class=\"correct\">RIGHT :)</span></td>\n");
     } else {
         printf("<td><span class=\"wrong\">WRONG :(</span></td>\n");
-        $_SESSION['count']--;
+        // $_SESSION['count']--;   // Because we will be doing one extra reload...
         $_SESSION['wrong']++;
     }
+    ?> </tr>
+    <tr>
+    <td><input class="button" type="submit" name="continue" id="continue" value="Continue!" /></td>
+    </tr>
+    </table>
+    </form>
+    <?php
     if ($_SESSION['count'] < $limit) {
         $_SESSION['generate'] = true;
-        printf("<td width=\"16\">&nbsp;</td>\n");
-        printf("<td><input type=\"submit\" name=\"continue\"
-                             id=\"continue\" value=\"Continue!\" /></td>\n");
     } else {
         $_SESSION['reset'] = true;
     }
@@ -230,36 +218,35 @@ if (isset($_POST['answer'])) {
     //  What do we do if answer is not set?
 }
 ?>
-    </form>
   </tr>
 </table>
 
 <?php
 if (isset($_SESSION['reset'])) {
     ?>
-<p><span class="congratulations">Congra<a href="https://www.youtube.com/watch?v=1Bix44C1EzY">d</a>ulations!</span>
-   You answered all questions!</p>
-<p>It took you
-  <?php printf("%0.3lf", microtime_float() - $_SESSION['zero']);?> seconds
-<?php
-if ($_SESSION['wrong'] == 0) {
+    <p><span class="congratulations">Congra<a href="https://www.youtube.com/watch?v=1Bix44C1EzY">d</a>ulations!</span>
+    You answered all questions!</p>
+    <p>It took you
+    <?php printf("%0.3lf", microtime_float() - $_SESSION['zero']);?> seconds
+    <?php
+    if ($_SESSION['wrong'] == 0) {
+            ?>
+    and you made no mistakes.
+    <?php
+    } else if ($_SESSION['wrong'] == 1) {
+            ?>
+    and you made one mistake
+    <?php
+    } else {
+            ?>
+    and you made <?php echo "${_SESSION['wrong']}" ?> mistakes.</p>
+    <?php
+    }
         ?>
-  and you made no mistakes.
-<?php
-} else if ($_SESSION['wrong'] == 1) {
-        ?>
-  and you made one mistake
-<?php
-} else {
-        ?>
-  and you made <?php echo "${_SESSION['wrong']}" ?> mistakes.</p>
-<?php
-}
-    ?>
-<form <?php echo "action=\"$self\""; ?> id="r" name="r" method="post">
-<input type="submit" name="again" id="again" value="Play again!" />
-</form>
-<?php
+    <form <?php echo "action=\"$self\""; ?> id="r" name="r" method="post">
+    <input type="submit" name="again" id="again" value="Play again!" />
+    </form>
+    <?php
 }
 ?>
 
