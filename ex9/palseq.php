@@ -14,7 +14,7 @@ if (isset($_GET['cheat'])) {
 if (isset($_GET['limit'])) {
     $limit = $_GET['limit'];
 } else {
-    $limit = 5;
+    $limit = 10;
 }
 
 session_start();
@@ -125,16 +125,20 @@ if (!defined('PHP_INT_MAX')) {
 function generate()
 {
     global $permitted_chars;
+    global $limit;
     
-    $max = floor(pow(3, $_SESSION['count']+1));
+    $max = floor(pow(1000, ($_SESSION['count']+2)/$limit));
     if ($max > 1000)
     {
         $max = 1000;
     }
+    $min = $_SESSION['count']*$limit - 7;
+    if ($min < 3) {
+        $min = 3;
+    }
 
     // $_SESSION['count']++;
-    $num = rand(3, $max);
-    $length = rand(3, $max);
+    $length = rand($min, $max);
 
     $sub_permitted_chars = substr($permitted_chars, 0, $_SESSION['count'] + 2);
     
@@ -237,9 +241,9 @@ if (isset($_POST['answer'])) {
     <tr>
     <?php
     if ($_POST['answer'] == $_SESSION['answer']) {
-        printf("<td><span class=\"correct\">RIGHT :)</span></td>\n");
+        printf("<td><span class=\"correct\">Right :)</span></td>\n");
     } else {
-        printf("<td><span class=\"wrong\">WRONG :(</span></td>\n");
+        printf("<td><span class=\"wrong\">Wrong :(</span></td>\n");
         // $_SESSION['count']--;   // Because we will be doing one extra reload...
         $_SESSION['wrong']++;
     }
