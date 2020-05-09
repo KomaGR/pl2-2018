@@ -14,31 +14,73 @@ if (isset($_GET['cheat'])) {
 if (isset($_GET['limit'])) {
     $limit = $_GET['limit'];
 } else {
-    $limit = 3;
+    $limit = 5;
 }
 
 session_start();
 
-function prime($p)
-{
-    if ($p == 2) {
-        return true;
-    }
+// Shamelessly stolen from 
+// https://www.geeksforgeeks.org/longest-palindrome-subsequence-space/
+function lps($s) 
+{ 
+    $n = strlen($s); 
+  
+    // Pick starting point 
+    for ($i = $n - 1;  
+         $i >= 0; $i--)  
+    { 
+        $back_up = 0; 
+          
+        // Pick ending points and  
+        // see if s[i] increases  
+        // length of longest common 
+        // subsequence ending with s[j]. 
+        for ($j = $i; $j < $n; $j++)  
+        { 
+  
+            // similar to 2D array  
+            // L[i][j] == 1 i.e., 
+            // handling substrings  
+            // of length one. 
+            if ($j == $i) 
+                $a[$j] = 1;  
+  
+            // Similar to 2D array  
+            // L[i][j] = L[i+1][j-1]+2 
+            // i.e., handling case when  
+            // corner characters are same.  
+            else if ($s[$i] == $s[$j]) 
+            { 
+                  
+                // value a[j] is depend  
+                // upon previous unupdated  
+                // value of a[j-1] but in  
+                // previous loop value of  
+                // a[j-1] is changed. To  
+                // store the unupdated value 
+                // of a[j-1] back_up variable  
+                // is used. 
+                $temp = $a[$j]; 
+                $a[$j] = $back_up + 2; 
+                $back_up = $temp; 
+            } 
+  
+            // similar to 2D array 
+            // L[i][j] = max(L[i][j-1], 
+            // a[i+1][j]) 
+            else
+            { 
+                $back_up = $a[$j]; 
+                $a[$j] = max($a[$j - 1],  
+                             $a[$j]); 
+            } 
+        } 
+    } 
+      
+    return $a[$n - 1]; 
+} 
 
-    if ($p % 2 == 0) {
-        return false;
-    }
-
-    for ($i = 3; $i * $i <= $p; $i += 2) {
-        if ($p % $i == 0) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-$permited_chars = "abcdefghijklmnopqrstuvwxyz";
+$permitted_chars = "abcdefghijklmnopqrstuvwxyz";
 
 function generate_string($chars = "abcdefghijklmnopqrstuvwxyz", $length = 6)
 {
@@ -82,9 +124,9 @@ if (!defined('PHP_INT_MAX')) {
 
 function generate()
 {
-    global $permited_chars;
+    global $permitted_chars;
     
-    $max = floor(pow(2, $_SESSION['count']+2));
+    $max = floor(pow(3, $_SESSION['count']+1));
     if ($max > 1000)
     {
         $max = 1000;
@@ -94,13 +136,13 @@ function generate()
     $num = rand(3, $max);
     $length = rand(3, $max);
 
-    $sub_permitted_chars = substr($permited_chars, 0, $_SESSION['count'] + 1);
+    $sub_permitted_chars = substr($permitted_chars, 0, $_SESSION['count'] + 2);
     
     $string = generate_string($sub_permitted_chars, $length);    
-    $ans = solve($string);
+    $lps_length = lps($string);
     
     $_SESSION['string'] = $string;
-    $_SESSION['answer'] = $ans;
+    $_SESSION['answer'] = $length - $lps_length;
 }
 
 ?>
