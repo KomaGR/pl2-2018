@@ -20,7 +20,7 @@ Heap::Heap(std::vector<int32_t> *stak) {
     upperBound = hp.capacity();
 }
 
-/* Not sure if this actually frees up the memory but 
+/* Not sure if this actually frees up the memory but
    it's only used once on main's stack frame anyway. */
 Heap::~Heap() {
     hp.clear();
@@ -47,7 +47,7 @@ int32_t Heap::add(int32_t a, int32_t b) {
     }
     addr |= (1 << 31);       // Set ptr bit
     addr &= ~(1 << 30);      // (Not really needed. If it's 1 we're in trouble.)
-    /*  Thus, pointers always start with 0b10xx. 
+    /*  Thus, pointers always start with 0b10xx.
         This can't happen with normal ints up to 30 bits. */
     if (freeList.empty() && hp.size() >= upperBound) {
         /* Try to free up memory */
@@ -81,17 +81,17 @@ void Heap::bird_is_the_word(int32_t new_addr) {
         /* DFS from *t */
         if (IFADDR(*t)) {
             to_check.push_back(*t);     // A pointer to the heap
-        }    
-    } 
+        }
+    }
 
     while (!to_check.empty()) {
         int32_t curr_entry = to_check.back();
         to_check.pop_back();
-        
+
         int32_t addr = ADDR(curr_entry);   // Calculate corresponding position at heap
-            
+
         if (hp.at(addr).metadata > 0) {
-            /* Already marked. 
+            /* Already marked.
                 Also: Cycle detected. */
             continue;
         }
@@ -114,7 +114,7 @@ void Heap::bird_is_the_word(int32_t new_addr) {
     }
 
     /* ## SWEEP ## */
-    for (int32_t t = 0; t != hp.size(); ++t) {        
+    for (int32_t t = 0; t != hp.size(); ++t) {
         if (hp.at(t).metadata == 0) {
             #ifdef PRINTDEBUG
             std::cout << "#GC: Free 0a" << t << '\n';

@@ -437,7 +437,7 @@ int main(int argc, char const *argv[]) {
             the_stack.pop_back();
             c = hp.add(a, b);
             #ifdef PRINTDEBUG
-            std::cout << "CONS " << (IFADDR(a) ? "0a" : "") << (IFADDR(a) ? ADDR(a) : a) << " " 
+            std::cout << "CONS " << (IFADDR(a) ? "0a" : "") << (IFADDR(a) ? ADDR(a) : a) << " "
                                  << (IFADDR(b) ? "0a" : "") << (IFADDR(b) ? ADDR(b) : b) << '\n';
             std::cout << "Saved@ "  << "0a" << ADDR(c) << "\n\n";
             #endif

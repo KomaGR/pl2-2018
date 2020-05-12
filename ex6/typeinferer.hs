@@ -74,18 +74,18 @@ instance Show Type where
 readExpr :: String -> Expr
 readExpr s = read s :: Expr
 
-aux_lookup :: Map.Map String Int -> String -> Int 
-              -> (Map.Map String Int, Int, Int) 
+aux_lookup :: Map.Map String Int -> String -> Int
+              -> (Map.Map String Int, Int, Int)
 aux_lookup m k n = case (Map.lookup k m) of
                       Just v -> (m, v, n)
                       Nothing -> (Map.insert k n m, n, n+1)
 
--- aux_lookup_2 :: IntMap.IntMap Int Int -> String -> Int 
+-- aux_lookup_2 :: IntMap.IntMap Int Int -> String -> Int
 --               -> (IntMap.IntMap String Int, Int, Int)
 aux_lookup_2 m k n = case (IntMap.lookup k m) of
                       Just v -> (m, v, n)
                       Nothing -> (IntMap.insert k n m, n, n+1)
- 
+
 -- s@(m,n,c) == state@(var_map, next_number, constraint_set)
 typist :: Expr -> State.State (Map.Map String Int, Int, [(Type, Type)]) Type
 -- = "(Evar " ++ a ++ ")"
@@ -111,16 +111,16 @@ typist x@(Eabs a e) = do
                         State.return $ (Tfun (Tvar n) (t2))
 
 -- = "(Eapp " ++ typist e1 ++ " & " ++ typist e2 ++ ")"
-typist x@(Eapp e1 e2) = do 
+typist x@(Eapp e1 e2) = do
                           t2 <- typist e2
                           t1 <- typist e1
                           (m,n,c) <- State.get
                           let a = Tvar n        -- create new var a for t1 == t2->a
-                          State.put (m,n+1,c)     
+                          State.put (m,n+1,c)
                           (m1,n1,c1) <- State.get
                           State.put (m1, n1, (t1, Tfun t2 a):c1)
                           State.return $ a
-  
+
 typist_wrapper e = State.runState (typist e) (Map.empty, 0, [])
 
 -- Finds if t1 shows up in t2
@@ -145,21 +145,21 @@ unify :: [(Type, Type)] -> [(Type, Type)] -> Maybe [(Type, Type)]
 unify [] solution = Just solution
 unify ((t1, t2):c) sol | t1 == t2 = unify c sol
 
-unify ((t1@(Tvar a), t2):c) sol | not (show_up t1 t2) = 
-  unify c_prime ((t1, t2):sol) 
+unify ((t1@(Tvar a), t2):c) sol | not (show_up t1 t2) =
+  unify c_prime ((t1, t2):sol)
   where c_prime = map (subt (t1,t2)) c
 
-unify ((t1, t2@(Tvar a)):c) sol | not (show_up t2 t1) = 
-  unify c_prime ((t2, t1):sol) 
+unify ((t1, t2@(Tvar a)):c) sol | not (show_up t2 t1) =
+  unify c_prime ((t2, t1):sol)
   where c_prime = map (subt (t1,t2)) c
 
-unify ((t1@(Tfun t11 t12), t2@(Tfun t21 t22)):c) sol = 
+unify ((t1@(Tfun t11 t12), t2@(Tfun t21 t22)):c) sol =
   unify ((t11,t21):(t12,t22):c) sol
 
 unify ((_,_):_) _ = Nothing
 
 unify_wrapper :: (Type, (Map.Map String Int, Int, [(Type, Type)])) -> Maybe Type
-unify_wrapper (t, (var_map, _, constraint_set)) = 
+unify_wrapper (t, (var_map, _, constraint_set)) =
   case (unify constraint_set []) of
     -- Just sol -> Just (t, sol) -- subs on $t(ype) with fold
     Just sol -> Just (substitution t (qFromList sol)) -- subs on $t(ype) with fold
@@ -172,11 +172,11 @@ substitution t qs = substitution new_type new_qs
                           new_type = subs s t
 
 reassign :: Type -> State.State (IntMap.IntMap Int, Int) Type
-reassign (Tfun t1 t2) = do 
+reassign (Tfun t1 t2) = do
                           nt1 <- reassign t1
                           nt2 <- reassign t2
                           return $ Tfun nt1 nt2
-reassign (Tvar a) = do 
+reassign (Tvar a) = do
                       (m, n) <- State.get
                       let (new_m, n_prime, new_n) = aux_lookup_2 m a n
                       State.put (new_m, new_n)

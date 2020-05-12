@@ -83,7 +83,7 @@ prop_NLongPath boolpath =
         in path intpath bird == path intpath (trimTree (n+1) bird) -- n+1 because n is #edges, not #nodes
 
 
-prop_ZigZag (NonNegative n) = 
+prop_ZigZag (NonNegative n) =
         let boolpath = [odd x | x <- [1..(n)]]
             zigzag = map (\x -> if x then 1 else 0) boolpath
             value = path zigzag bird
