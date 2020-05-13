@@ -1,3 +1,6 @@
+-- Γλώσσες Προγραμματισμού 2 2018
+-- Ορέστης Καπαρουνάκης 03114057
+-- Άσκηση 1 - Μετρήστε τα παλίνδρομα σε Haskell: non-pure
 import Control.Monad.ST
 import Data.Array.ST
 import Data.Array

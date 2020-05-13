@@ -1,3 +1,6 @@
+# Γλώσσες Προγραμματισμού 2 2018
+# Ορέστης Καπαρουνάκης 03114057
+# Άσκηση 9 - Γλώσσες σεναρίων: client
 import sys
 import time
 from lxml import html
